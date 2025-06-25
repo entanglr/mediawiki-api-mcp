@@ -3,7 +3,7 @@
 import pytest
 import asyncio
 from unittest.mock import AsyncMock, MagicMock
-from mediawiki_api_mcp.handlers.edit import handle_edit_page, handle_get_page
+from mediawiki_api_mcp.handlers.wiki_page_edit import handle_edit_page, handle_get_page
 from mediawiki_api_mcp.client import MediaWikiClient
 
 

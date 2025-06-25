@@ -17,23 +17,23 @@ The project is organized into modular components for maintainability:
 ```
 mediawiki_api_mcp/
 ├── __init__.py
-├── server.py          # Main MCP server implementation
-├── client.py          # MediaWiki API client
-├── tools/             # Tool definitions
+├── server.py             # Main MCP server implementation
+├── client.py             # MediaWiki API client
+├── tools/                # Tool definitions
 │   ├── __init__.py
-│   ├── edit.py        # Edit/get page tools
-│   └── search.py      # Search tools
-└── handlers/          # Tool handlers
+│   ├── wiki_page_edit.py # Edit/get page tools
+│   └── wiki_search.py    # Search tools
+└── handlers/             # Tool handlers
     ├── __init__.py
-    ├── edit.py        # Edit/get page handlers
-    └── search.py      # Search handlers
+    ├── wiki_page_edit.py # Edit/get page handlers
+    └── wiki_search.py    # Search handlers
 
 tests/
 ├── __init__.py
-├── test_server.py     # Integration tests
-├── test_edit.py       # Edit handler tests
-├── test_search.py     # Search handler tests
-└── test_tools.py      # Tool definition tests
+├── test_server.py         # Integration tests
+├── test_wiki_page_edit.py # Edit handler tests
+├── test_wiki_search.py    # Search handler tests
+└── test_tools.py          # Tool definition tests
 ```
 
 ## Installation
@@ -51,7 +51,7 @@ uv install
 export MEDIAWIKI_API_URL="https://your-wiki.com/api.php"
 export MEDIAWIKI_API_BOT_USERNAME="your_bot_username"
 export MEDIAWIKI_API_BOT_PASSWORD="your_bot_password"
-export MEDIAWIKI_API_BOT_USER_AGENT="Your-Bot-Name/1.0"  # Optional
+export MEDIAWIKI_API_BOT_USER_AGENT="MediaWiki-MCP-Bot/1.0"  # Optional
 ```
 
 ## Usage
@@ -81,7 +81,8 @@ Add to your Claude Desktop configuration file:
       "env": {
         "MEDIAWIKI_API_URL": "https://your-wiki.com/api.php",
         "MEDIAWIKI_API_BOT_USERNAME": "your_bot_username",
-        "MEDIAWIKI_API_BOT_PASSWORD": "your_bot_password"
+        "MEDIAWIKI_API_BOT_PASSWORD": "your_bot_password",
+        "MEDIAWIKI_API_BOT_USER_AGENT": "MediaWiki-MCP-Bot/1.0"
       }
     }
   }
@@ -90,7 +91,7 @@ Add to your Claude Desktop configuration file:
 
 ## Tools
 
-### wiki_edit_page
+### wiki_page_edit
 
 Edit or create MediaWiki pages with comprehensive options:
 
@@ -99,7 +100,7 @@ Edit or create MediaWiki pages with comprehensive options:
 - **Section editing**: `section`, `sectiontitle`
 - **Metadata**: `summary`, `minor`, `bot`, `createonly`, `nocreate`
 
-### wiki_get_page
+### wiki_page_get
 
 Retrieve page information and content:
 
@@ -128,9 +129,10 @@ uv run pytest
 Run specific test modules:
 
 ```bash
-uv run pytest tests/test_edit.py
-uv run pytest tests/test_search.py
+uv run pytest tests/test_server.py
 uv run pytest tests/test_tools.py
+uv run pytest tests/test_wiki_page_edit.py
+uv run pytest tests/test_wiki_search.py
 ```
 
 ### Code Quality

@@ -356,17 +356,37 @@ async def test_list_tools():
 
     # Find the search tool and verify its schema
     search_tool = next(tool for tool in tools if tool.name == "wiki_search")
-    assert search_tool.description == "Search for wiki pages by title or content using MediaWiki's search API"
+    expected_description = """Search for pages using MediaWiki's search API.
+
+    Args:
+        search_query: Search query string (required)
+        namespaces: List of namespace IDs to search in (default: [0] for main namespace)
+        limit: Maximum number of results (1-500, default: 10)
+        offset: Search result offset for pagination (default: 0)
+        what: Type of search - "text", "title", or "nearmatch" (default: "text")
+        info: Metadata to return (options: rewrittenquery, suggestion, totalhits)
+        prop: Properties to return for each search result
+        interwiki: Include interwiki results if available (default: false)
+        enable_rewrites: Enable internal query rewriting for better results (default: true)
+        sort: Sort order of returned results (default: relevance)
+        qiprofile: Query independent ranking profile (default: engine_autoselect)
+    """
+    assert search_tool.description == expected_description
 
     # Verify required fields
-    assert "query" in search_tool.inputSchema["required"]
+    assert "search_query" in search_tool.inputSchema["required"]
 
     # Verify search-specific properties exist
     properties = search_tool.inputSchema["properties"]
-    assert "query" in properties
+    assert "search_query" in properties
     assert "namespaces" in properties
     assert "limit" in properties
+    assert "offset" in properties
     assert "what" in properties
+    assert "info" in properties
+    assert "prop" in properties
+    assert "interwiki" in properties
+    assert "enable_rewrites" in properties
     assert "sort" in properties
     assert "qiprofile" in properties
 

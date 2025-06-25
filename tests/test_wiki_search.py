@@ -154,10 +154,10 @@ class TestSearchHandlers:
                         "pageid": 1,
                         "ns": 0,
                         "redirecttitle": "HomePage",
-                        "redirectsnippet": "Redirect <span class=\"searchmatch\">match</span>",
+                        "redirectsnippet": "<span class=\"searchmatch\">match</span>",
                         "sectiontitle": "Introduction",
                         "sectionsnippet": "Section <span class=\"searchmatch\">content</span>",
-                        "categorysnippet": "Category <span class=\"searchmatch\">info</span>",
+                        "categorysnippet": "<span class=\"searchmatch\">info</span>",
                         "isfilematch": True
                     }
                 ]

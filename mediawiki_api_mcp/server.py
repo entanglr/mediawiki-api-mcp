@@ -120,28 +120,56 @@ async def wiki_page_get(
 @mcp.tool()
 async def wiki_search(
     search_query: str,
+    namespaces: list[int] | None = None,
     limit: int = 10,
     offset: int = 0,
     what: str = "text",
+    info: list[str] | None = None,
+    prop: list[str] | None = None,
+    interwiki: bool = False,
+    enable_rewrites: bool = True,
+    sort: str = "relevance",
+    qiprofile: str = "engine_autoselect",
 ) -> str:
     """Search for pages using MediaWiki's search API.
 
     Args:
         search_query: Search query string (required)
+        namespaces: List of namespace IDs to search in (default: [0] for main namespace)
         limit: Maximum number of results (1-500, default: 10)
         offset: Search result offset for pagination (default: 0)
         what: Type of search - "text", "title", or "nearmatch" (default: "text")
+        info: Metadata to return (options: rewrittenquery, suggestion, totalhits)
+        prop: Properties to return for each search result
+        interwiki: Include interwiki results if available (default: false)
+        enable_rewrites: Enable internal query rewriting for better results (default: true)
+        sort: Sort order of returned results (default: relevance)
+        qiprofile: Query independent ranking profile (default: engine_autoselect)
     """
     try:
         config = get_config()
         async with MediaWikiClient(config) as client:
-            result = await client.search_pages(
-                search_query=search_query,
-                limit=limit,
-                offset=offset,
-                what=what
-            )
-            return f"Search completed: {result}"
+            # Import here to avoid circular imports
+            from .handlers import handle_search
+
+            # Convert FastMCP parameters to handler arguments
+            arguments = {
+                "query": search_query,  # Handler expects "query" not "search_query"
+                "namespaces": namespaces,
+                "limit": limit,
+                "offset": offset,
+                "what": what,
+                "info": info,
+                "prop": prop,
+                "interwiki": interwiki,
+                "enable_rewrites": enable_rewrites,
+                "sort": sort,
+                "qiprofile": qiprofile,
+            }
+
+            result = await handle_search(client, arguments)
+            # Return the formatted text from the handler
+            return result[0].text if result else "No results"
     except Exception as e:
         logger.error(f"Wiki search failed: {e}")
         return f"Error: {str(e)}"

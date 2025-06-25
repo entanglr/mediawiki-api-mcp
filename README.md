@@ -6,8 +6,8 @@ A Model Context Protocol (MCP) server that allows LLMs like Claude to interact w
 
 The server provides three main MCP tools with the `wiki_` prefix:
 
-- **`wiki_edit_page`**: Edit or create MediaWiki pages with comprehensive editing options
-- **`wiki_get_page`**: Retrieve page information and content
+- **`wiki_page_edit`**: Edit or create MediaWiki pages with comprehensive editing options
+- **`wiki_page_get`**: Retrieve page information and content
 - **`wiki_search`**: Search for pages using MediaWiki's search API with advanced filtering
 
 ## Project Structure
@@ -21,17 +21,20 @@ mediawiki_api_mcp/
 ├── client.py             # MediaWiki API client
 ├── tools/                # Tool definitions
 │   ├── __init__.py
-│   ├── wiki_page_edit.py # Edit/get page tools
+│   ├── wiki_page_edit.py # Edit page tools
+│   ├── wiki_page_get.py  # Get page tools
 │   └── wiki_search.py    # Search tools
 └── handlers/             # Tool handlers
     ├── __init__.py
-    ├── wiki_page_edit.py # Edit/get page handlers
+    ├── wiki_page_edit.py # Edit page handlers
+    ├── wiki_page_get.py  # Get page handlers
     └── wiki_search.py    # Search handlers
 
 tests/
 ├── __init__.py
 ├── test_server.py         # Integration tests
 ├── test_wiki_page_edit.py # Edit handler tests
+├── test_wiki_page_get.py  # Get handler tests
 ├── test_wiki_search.py    # Search handler tests
 └── test_tools.py          # Tool definition tests
 ```

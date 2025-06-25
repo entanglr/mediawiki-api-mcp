@@ -351,8 +351,8 @@ async def test_list_tools():
 
     tool_names = [tool.name for tool in tools]
     assert "wiki_search" in tool_names
-    assert "wiki_edit_page" in tool_names
-    assert "wiki_get_page" in tool_names
+    assert "wiki_page_edit" in tool_names
+    assert "wiki_page_get" in tool_names
 
     # Find the search tool and verify its schema
     search_tool = next(tool for tool in tools if tool.name == "wiki_search")

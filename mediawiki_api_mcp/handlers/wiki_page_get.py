@@ -72,53 +72,58 @@ async def _handle_revisions_method(
     title: str | None,
     pageid: int | None
 ) -> Sequence[types.TextContent]:
-    """Handle revisions API method with proper formatversion=2 response parsing."""
-    try:
-        result = await client.get_page_info(title=title, pageid=pageid)
+    """Handle revisions API method with support for both formatversion 1 and 2 response parsing."""
+    result = await client.get_page_info(title=title, pageid=pageid)
 
-        if "query" not in result or "pages" not in result["query"]:
-            return [types.TextContent(
-                type="text",
-                text="Error: Unexpected response format from MediaWiki API"
-            )]
-
-        pages = result["query"]["pages"]
-        if not pages:
-            return [types.TextContent(
-                type="text",
-                text="No pages found"
-            )]
-
-        page_data = pages[0]  # formatversion=2 returns pages as array
-
-        if "missing" in page_data:
-            page_identifier = title or f"ID: {pageid}"
-            return [types.TextContent(
-                type="text",
-                text=f"Page not found: {page_identifier}"
-            )]
-
-        page_title = page_data.get("title", "Unknown")
-        page_id = page_data.get("pageid", "Unknown")
-
-        # Extract content from formatversion=2 structure
-        content = "No content available"
-        if "revisions" in page_data and page_data["revisions"]:
-            revision = page_data["revisions"][0]
-            if "slots" in revision and "main" in revision["slots"]:
-                main_slot = revision["slots"]["main"]
-                if "content" in main_slot:
-                    content = main_slot["content"]
-
+    if "query" not in result or "pages" not in result["query"]:
         return [types.TextContent(
             type="text",
-            text=f"Page: {page_title} (ID: {page_id})\nMethod: Revisions API\nFormat: Wikitext\n\nContent:\n{content}"
+            text="Error: Unexpected response format from MediaWiki API"
         )]
-    except Exception as e:
+
+    pages = result["query"]["pages"]
+    if not pages:
         return [types.TextContent(
             type="text",
-            text=f"Error with revisions method: {str(e)}"
+            text="No pages found"
         )]
+
+    # Handle both formatversion=1 (dict with page IDs as keys) and formatversion=2 (array)
+    if isinstance(pages, dict):
+        # formatversion=1: pages is a dict with page IDs as keys
+        page_data = next(iter(pages.values()))
+    else:
+        # formatversion=2: pages is an array
+        page_data = pages[0]
+
+    if "missing" in page_data:
+        page_identifier = title or f"ID: {pageid}"
+        return [types.TextContent(
+            type="text",
+            text=f"Page not found: {page_identifier}"
+        )]
+
+    page_title = page_data.get("title", "Unknown")
+    page_id = page_data.get("pageid", "Unknown")
+
+    # Extract content from both formatversion structures
+    content = "No content available"
+    if "revisions" in page_data and page_data["revisions"]:
+        revision = page_data["revisions"][0]
+
+        # formatversion=2 structure
+        if "slots" in revision and "main" in revision["slots"]:
+            main_slot = revision["slots"]["main"]
+            if "content" in main_slot:
+                content = main_slot["content"]
+        # formatversion=1 structure
+        elif "*" in revision:
+            content = revision["*"]
+
+    return [types.TextContent(
+        type="text",
+        text=f"Page: {page_title} (ID: {page_id})\nMethod: Revisions API\nFormat: Wikitext\n\nContent:\n{content}"
+    )]
 
 
 async def _handle_parse_method(

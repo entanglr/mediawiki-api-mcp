@@ -1,6 +1,5 @@
 """Test suite for MediaWiki MCP tool definitions."""
 
-import pytest
 from mediawiki_api_mcp.tools.wiki_page_edit import get_edit_tools
 from mediawiki_api_mcp.tools.wiki_search import get_search_tools
 

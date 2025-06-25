@@ -1,13 +1,13 @@
 """Tests for MediaWiki MCP server."""
 
-import pytest
-from unittest.mock import Mock, patch, AsyncMock
-import json
+from unittest.mock import AsyncMock, Mock, patch
 
-from mediawiki_api_mcp.server import app, get_config
-from mediawiki_api_mcp.handlers import handle_search, handle_edit_page, handle_get_page
-from mediawiki_api_mcp.client import MediaWikiClient, MediaWikiConfig
 import mcp.types as types
+import pytest
+
+from mediawiki_api_mcp.client import MediaWikiClient, MediaWikiConfig
+from mediawiki_api_mcp.handlers import handle_edit_page, handle_get_page, handle_search
+from mediawiki_api_mcp.server import app, get_config
 
 
 @pytest.fixture

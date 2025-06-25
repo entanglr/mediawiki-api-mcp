@@ -1,10 +1,7 @@
 """MediaWiki API client for handling authentication and requests."""
 
-import hashlib
 import logging
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
-from urllib.parse import urljoin
+from typing import Any
 
 import httpx
 from pydantic import BaseModel
@@ -26,7 +23,7 @@ class MediaWikiClient:
     def __init__(self, config: MediaWikiConfig):
         self.config = config
         self.session = httpx.AsyncClient()
-        self.csrf_token: Optional[str] = None
+        self.csrf_token: str | None = None
         self.logged_in = False
 
     async def __aenter__(self) -> "MediaWikiClient":
@@ -34,16 +31,16 @@ class MediaWikiClient:
         await self.login()
         return self
 
-    async def __aexit__(self, exc_type: Optional[type], exc_val: Optional[BaseException], exc_tb: Optional[object]) -> None:
+    async def __aexit__(self, exc_type: type | None, exc_val: BaseException | None, exc_tb: object | None) -> None:
         """Async context manager exit."""
         await self.session.aclose()
 
     async def _make_request(
         self,
         method: str = "GET",
-        data: Optional[Dict[str, Any]] = None,
-        params: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+        data: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Make a request to the MediaWiki API."""
         url = self.config.api_url
         headers = {
@@ -57,7 +54,7 @@ class MediaWikiClient:
             response = await self.session.post(url, data=data, headers=headers)
 
         response.raise_for_status()
-        json_response: Dict[str, Any] = response.json()
+        json_response: dict[str, Any] = response.json()
         return json_response
 
     async def login(self) -> bool:
@@ -97,7 +94,7 @@ class MediaWikiClient:
             logger.error(f"Login error: {e}")
             return False
 
-    async def get_csrf_token(self) -> Optional[str]:
+    async def get_csrf_token(self) -> str | None:
         """Get CSRF token for editing operations."""
         if not self.logged_in:
             await self.login()
@@ -119,20 +116,20 @@ class MediaWikiClient:
 
     async def edit_page(
         self,
-        title: Optional[str] = None,
-        pageid: Optional[int] = None,
-        text: Optional[str] = None,
-        summary: Optional[str] = None,
-        section: Optional[str] = None,
-        sectiontitle: Optional[str] = None,
-        appendtext: Optional[str] = None,
-        prependtext: Optional[str] = None,
+        title: str | None = None,
+        pageid: int | None = None,
+        text: str | None = None,
+        summary: str | None = None,
+        section: str | None = None,
+        sectiontitle: str | None = None,
+        appendtext: str | None = None,
+        prependtext: str | None = None,
         minor: bool = False,
         bot: bool = True,
         createonly: bool = False,
         nocreate: bool = False,
         **kwargs: Any
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Edit a MediaWiki page.
 
@@ -210,7 +207,7 @@ class MediaWikiClient:
 
             if "edit" in response and response["edit"].get("result") == "Success":
                 logger.info(f"Successfully edited page: {title or pageid}")
-                edit_result: Dict[str, Any] = response["edit"]
+                edit_result: dict[str, Any] = response["edit"]
                 return edit_result
             else:
                 logger.error(f"Edit failed: {response}")
@@ -222,9 +219,9 @@ class MediaWikiClient:
 
     async def get_page_info(
         self,
-        title: Optional[str] = None,
-        pageid: Optional[int] = None
-    ) -> Dict[str, Any]:
+        title: str | None = None,
+        pageid: int | None = None
+    ) -> dict[str, Any]:
         """Get information about a page using the Revisions API with proper parameters."""
         if not title and not pageid:
             raise ValueError("Either title or pageid must be provided")
@@ -248,8 +245,8 @@ class MediaWikiClient:
 
     async def get_page_raw(
         self,
-        title: Optional[str] = None,
-        pageid: Optional[int] = None
+        title: str | None = None,
+        pageid: int | None = None
     ) -> str:
         """Get raw wikitext content using the raw action (fastest method)."""
         if not title and not pageid:
@@ -276,10 +273,10 @@ class MediaWikiClient:
 
     async def get_page_parse(
         self,
-        title: Optional[str] = None,
-        pageid: Optional[int] = None,
+        title: str | None = None,
+        pageid: int | None = None,
         format_type: str = "wikitext"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get page content using the Parse API (HTML or wikitext)."""
         if not title and not pageid:
             raise ValueError("Either title or pageid must be provided")
@@ -305,12 +302,12 @@ class MediaWikiClient:
 
     async def get_page_extracts(
         self,
-        title: Optional[str] = None,
-        pageid: Optional[int] = None,
-        sentences: Optional[int] = None,
-        chars: Optional[int] = None,
+        title: str | None = None,
+        pageid: int | None = None,
+        sentences: int | None = None,
+        chars: int | None = None,
         plain_text: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get page extracts using the TextExtracts API."""
         if not title and not pageid:
             raise ValueError("Either title or pageid must be provided")
@@ -342,17 +339,17 @@ class MediaWikiClient:
     async def search_pages(
         self,
         search_query: str,
-        namespaces: Optional[List[int]] = None,
+        namespaces: list[int] | None = None,
         limit: int = 10,
         offset: int = 0,
         what: str = "text",
-        info: Optional[List[str]] = None,
-        prop: Optional[List[str]] = None,
+        info: list[str] | None = None,
+        prop: list[str] | None = None,
         interwiki: bool = False,
         enable_rewrites: bool = True,
         sort_order: str = "relevance",
         qiprofile: str = "engine_autoselect"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Perform a full-text search using MediaWiki's search API.
 

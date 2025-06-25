@@ -1,10 +1,10 @@
 """MediaWiki edit tools definition."""
 
-from typing import List
+
 import mcp.types as types
 
 
-def get_edit_tools() -> List[types.Tool]:
+def get_edit_tools() -> list[types.Tool]:
     """Get edit-related MediaWiki tools."""
     return [
         types.Tool(

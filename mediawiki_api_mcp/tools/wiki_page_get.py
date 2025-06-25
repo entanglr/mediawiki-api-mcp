@@ -1,10 +1,10 @@
 """MediaWiki page retrieval tools definition."""
 
-from typing import List
+
 import mcp.types as types
 
 
-def get_page_tools() -> List[types.Tool]:
+def get_page_tools() -> list[types.Tool]:
     """Get page retrieval-related MediaWiki tools."""
     return [
         types.Tool(

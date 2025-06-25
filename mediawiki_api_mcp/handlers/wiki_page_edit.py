@@ -1,8 +1,11 @@
 """MediaWiki edit handlers for MCP server."""
 
 import logging
-from typing import Any, Dict, Sequence
+from collections.abc import Sequence
+from typing import Any
+
 import mcp.types as types
+
 from ..client import MediaWikiClient
 
 logger = logging.getLogger(__name__)
@@ -10,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 async def handle_edit_page(
     client: MediaWikiClient,
-    arguments: Dict[str, Any]
+    arguments: dict[str, Any]
 ) -> Sequence[types.TextContent]:
     """Handle wiki_edit_page tool calls."""
     title = arguments.get("title")

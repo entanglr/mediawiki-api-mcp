@@ -1,8 +1,11 @@
 """MediaWiki page retrieval handlers for MCP server."""
 
 import logging
-from typing import Any, Dict, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any
+
 import mcp.types as types
+
 from ..client import MediaWikiClient
 
 logger = logging.getLogger(__name__)
@@ -10,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 async def handle_get_page(
     client: MediaWikiClient,
-    arguments: Dict[str, Any]
+    arguments: dict[str, Any]
 ) -> Sequence[types.TextContent]:
     """Handle wiki_page_get tool calls with support for multiple retrieval methods."""
     title = arguments.get("title")
@@ -45,8 +48,8 @@ async def handle_get_page(
 
 async def _handle_raw_method(
     client: MediaWikiClient,
-    title: Optional[str],
-    pageid: Optional[int]
+    title: str | None,
+    pageid: int | None
 ) -> Sequence[types.TextContent]:
     """Handle raw action method for fastest wikitext retrieval."""
     try:
@@ -66,8 +69,8 @@ async def _handle_raw_method(
 
 async def _handle_revisions_method(
     client: MediaWikiClient,
-    title: Optional[str],
-    pageid: Optional[int]
+    title: str | None,
+    pageid: int | None
 ) -> Sequence[types.TextContent]:
     """Handle revisions API method with proper formatversion=2 response parsing."""
     try:
@@ -120,8 +123,8 @@ async def _handle_revisions_method(
 
 async def _handle_parse_method(
     client: MediaWikiClient,
-    title: Optional[str],
-    pageid: Optional[int],
+    title: str | None,
+    pageid: int | None,
     content_format: str
 ) -> Sequence[types.TextContent]:
     """Handle parse API method for HTML or wikitext content."""
@@ -161,11 +164,11 @@ async def _handle_parse_method(
 
 async def _handle_extracts_method(
     client: MediaWikiClient,
-    title: Optional[str],
-    pageid: Optional[int],
+    title: str | None,
+    pageid: int | None,
     content_format: str,
-    sentences: Optional[int],
-    chars: Optional[int]
+    sentences: int | None,
+    chars: int | None
 ) -> Sequence[types.TextContent]:
     """Handle TextExtracts API method for plain text extracts."""
     try:

@@ -223,21 +223,116 @@ class MediaWikiClient:
         title: Optional[str] = None,
         pageid: Optional[int] = None
     ) -> Dict[str, Any]:
-        """Get information about a page."""
+        """Get information about a page using the Revisions API with proper parameters."""
         if not title and not pageid:
             raise ValueError("Either title or pageid must be provided")
 
         params = {
             "action": "query",
             "format": "json",
-            "prop": "info|revisions",
-            "rvprop": "timestamp|content"
+            "formatversion": "2",
+            "prop": "revisions",
+            "rvslots": "*",
+            "rvprop": "content"
         }
 
         if title:
             params["titles"] = title
         if pageid:
             params["pageids"] = str(pageid)
+
+        response = await self._make_request("GET", params=params)
+        return response
+
+    async def get_page_raw(
+        self,
+        title: Optional[str] = None,
+        pageid: Optional[int] = None
+    ) -> str:
+        """Get raw wikitext content using the raw action (fastest method)."""
+        if not title and not pageid:
+            raise ValueError("Either title or pageid must be provided")
+
+        params = {
+            "action": "raw"
+        }
+
+        if title:
+            params["title"] = title
+        elif pageid:
+            params["curid"] = str(pageid)
+
+        # Raw action returns plain text, not JSON
+        url = self.config.api_url
+        headers = {
+            "User-Agent": self.config.user_agent
+        }
+
+        response = await self.session.get(url, params=params, headers=headers)
+        response.raise_for_status()
+        return response.text
+
+    async def get_page_parse(
+        self,
+        title: Optional[str] = None,
+        pageid: Optional[int] = None,
+        format_type: str = "wikitext"
+    ) -> Dict[str, Any]:
+        """Get page content using the Parse API (HTML or wikitext)."""
+        if not title and not pageid:
+            raise ValueError("Either title or pageid must be provided")
+
+        params = {
+            "action": "parse",
+            "format": "json",
+            "formatversion": "2"
+        }
+
+        if title:
+            params["page"] = title
+        elif pageid:
+            params["oldid"] = str(pageid)
+
+        if format_type == "html":
+            params["prop"] = "text"
+        else:
+            params["prop"] = "wikitext"
+
+        response = await self._make_request("GET", params=params)
+        return response
+
+    async def get_page_extracts(
+        self,
+        title: Optional[str] = None,
+        pageid: Optional[int] = None,
+        sentences: Optional[int] = None,
+        chars: Optional[int] = None,
+        plain_text: bool = True
+    ) -> Dict[str, Any]:
+        """Get page extracts using the TextExtracts API."""
+        if not title and not pageid:
+            raise ValueError("Either title or pageid must be provided")
+
+        params = {
+            "action": "query",
+            "format": "json",
+            "formatversion": "2",
+            "prop": "extracts",
+            "exlimit": "1"
+        }
+
+        if title:
+            params["titles"] = title
+        elif pageid:
+            params["pageids"] = str(pageid)
+
+        if sentences:
+            params["exsentences"] = str(sentences)
+        elif chars:
+            params["exchars"] = str(chars)
+
+        if plain_text:
+            params["explaintext"] = "1"
 
         response = await self._make_request("GET", params=params)
         return response

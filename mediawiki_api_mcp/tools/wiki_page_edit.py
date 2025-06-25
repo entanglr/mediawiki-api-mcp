@@ -8,7 +8,7 @@ def get_edit_tools() -> List[types.Tool]:
     """Get edit-related MediaWiki tools."""
     return [
         types.Tool(
-            name="wiki_edit_page",
+            name="wiki_page_edit",
             description="Edit or create a MediaWiki page",
             inputSchema={
                 "type": "object",
@@ -70,7 +70,7 @@ def get_edit_tools() -> List[types.Tool]:
             }
         ),
         types.Tool(
-            name="wiki_get_page",
+            name="wiki_page_get",
             description="Get information and content of a MediaWiki page",
             inputSchema={
                 "type": "object",

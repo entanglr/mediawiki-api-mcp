@@ -60,9 +60,9 @@ async def call_tool(
         config = get_config()
 
         async with MediaWikiClient(config) as client:
-            if name == "wiki_edit_page":
+            if name == "wiki_page_edit":
                 return await handle_edit_page(client, arguments)
-            elif name == "wiki_get_page":
+            elif name == "wiki_page_get":
                 return await handle_get_page(client, arguments)
             elif name == "wiki_search":
                 return await handle_search(client, arguments)

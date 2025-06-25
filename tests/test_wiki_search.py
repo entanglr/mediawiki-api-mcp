@@ -1,10 +1,11 @@
 """Test suite for MediaWiki search handlers."""
 
+from unittest.mock import MagicMock
+
 import pytest
-import asyncio
-from unittest.mock import AsyncMock, MagicMock
-from mediawiki_api_mcp.handlers.wiki_search import handle_search
+
 from mediawiki_api_mcp.client import MediaWikiClient
+from mediawiki_api_mcp.handlers.wiki_search import handle_search
 
 
 class TestSearchHandlers:

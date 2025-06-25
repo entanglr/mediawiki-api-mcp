@@ -1,10 +1,11 @@
 """Test suite for MediaWiki page retrieval handlers."""
 
+from unittest.mock import MagicMock
+
 import pytest
-import asyncio
-from unittest.mock import AsyncMock, MagicMock
-from mediawiki_api_mcp.handlers.wiki_page_get import handle_get_page
+
 from mediawiki_api_mcp.client import MediaWikiClient
+from mediawiki_api_mcp.handlers.wiki_page_get import handle_get_page
 
 
 class TestGetHandlers:

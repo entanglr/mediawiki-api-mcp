@@ -1,10 +1,10 @@
 """MediaWiki search tools definition."""
 
-from typing import List
+
 import mcp.types as types
 
 
-def get_search_tools() -> List[types.Tool]:
+def get_search_tools() -> list[types.Tool]:
     """Get search-related MediaWiki tools."""
     return [
         types.Tool(

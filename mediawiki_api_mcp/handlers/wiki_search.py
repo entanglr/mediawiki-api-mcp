@@ -1,8 +1,11 @@
 """MediaWiki search handlers for MCP server."""
 
 import logging
-from typing import Any, Dict, Sequence
+from collections.abc import Sequence
+from typing import Any
+
 import mcp.types as types
+
 from ..client import MediaWikiClient
 
 logger = logging.getLogger(__name__)
@@ -10,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 async def handle_search(
     client: MediaWikiClient,
-    arguments: Dict[str, Any]
+    arguments: dict[str, Any]
 ) -> Sequence[types.TextContent]:
     """Handle wiki_search tool calls with comprehensive search functionality."""
     query = arguments.get("query")
@@ -137,7 +140,7 @@ async def handle_search(
 
                 # Add file match indicator
                 if 'isfilematch' in page and page['isfilematch']:
-                    response_text += f"   File content match: Yes\n"
+                    response_text += "   File content match: Yes\n"
 
                 response_text += "\n"
 

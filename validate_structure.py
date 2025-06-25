@@ -6,15 +6,7 @@ import sys
 
 # Test imports
 try:
-    import mcp.types as types
-
-    from mediawiki_api_mcp.client import MediaWikiClient, MediaWikiConfig
-    from mediawiki_api_mcp.handlers import (
-        handle_edit_page,
-        handle_get_page,
-        handle_search,
-    )
-    from mediawiki_api_mcp.server import app, get_config
+    from mediawiki_api_mcp.server import app
     from mediawiki_api_mcp.tools import get_edit_tools, get_search_tools
     print("✓ All imports successful")
 except ImportError as e:

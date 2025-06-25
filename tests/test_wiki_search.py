@@ -222,7 +222,7 @@ class TestSearchHandlers:
             "qiprofile": "popular_inclinks"
         }
 
-        result = await handle_search(mock_client, arguments)
+        await handle_search(mock_client, arguments)
 
         # Verify client was called with custom parameters
         mock_client.search_pages.assert_called_once_with(

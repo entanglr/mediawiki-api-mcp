@@ -10,7 +10,7 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 
 from .client import MediaWikiClient, MediaWikiConfig
-from .tools import get_edit_tools, get_search_tools
+from .tools import get_edit_tools, get_page_tools, get_search_tools
 from .handlers import handle_edit_page, handle_get_page, handle_search
 
 logging.basicConfig(level=logging.INFO)
@@ -46,6 +46,7 @@ async def list_tools() -> List[types.Tool]:
     """List available MediaWiki tools."""
     tools = []
     tools.extend(get_edit_tools())
+    tools.extend(get_page_tools())
     tools.extend(get_search_tools())
     return tools
 

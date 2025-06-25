@@ -131,6 +131,9 @@ async def handle_search(
                     response_text += f"   Section: {page['sectiontitle']}\n"
                 if 'sectionsnippet' in page:
                     section_snippet = page['sectionsnippet'].replace('<span class="searchmatch">', '**').replace('</span>', '**')
+                    # Remove "Section " prefix if present to avoid duplication
+                    if section_snippet.startswith("Section "):
+                        section_snippet = section_snippet[8:]
                     response_text += f"   Section match: {section_snippet}\n"
 
                 # Add category info if available

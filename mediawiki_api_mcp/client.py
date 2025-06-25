@@ -387,7 +387,7 @@ class MediaWikiClient:
             params["srnamespace"] = "|".join(str(ns) for ns in namespaces)
 
         # Set limits and pagination
-        params["srlimit"] = max(1, min(500, limit))
+        params["srlimit"] = str(max(1, min(500, limit)))
         if offset > 0:
             params["sroffset"] = str(offset)
 

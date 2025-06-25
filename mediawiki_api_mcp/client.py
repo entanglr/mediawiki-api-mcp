@@ -3,7 +3,7 @@
 import hashlib
 import logging
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urljoin
 
 import httpx
@@ -29,12 +29,12 @@ class MediaWikiClient:
         self.csrf_token: Optional[str] = None
         self.logged_in = False
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "MediaWikiClient":
         """Async context manager entry."""
         await self.login()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Optional[type], exc_val: Optional[BaseException], exc_tb: Optional[object]) -> None:
         """Async context manager exit."""
         await self.session.aclose()
 
@@ -57,7 +57,8 @@ class MediaWikiClient:
             response = await self.session.post(url, data=data, headers=headers)
 
         response.raise_for_status()
-        return response.json()
+        json_response: Dict[str, Any] = response.json()
+        return json_response
 
     async def login(self) -> bool:
         """Authenticate with MediaWiki using bot credentials."""
@@ -130,7 +131,7 @@ class MediaWikiClient:
         bot: bool = True,
         createonly: bool = False,
         nocreate: bool = False,
-        **kwargs
+        **kwargs: Any
     ) -> Dict[str, Any]:
         """
         Edit a MediaWiki page.
@@ -173,7 +174,7 @@ class MediaWikiClient:
         if title:
             edit_data["title"] = title
         if pageid:
-            edit_data["pageid"] = pageid
+            edit_data["pageid"] = str(pageid)
 
         # Content parameters
         if text is not None:
@@ -209,7 +210,8 @@ class MediaWikiClient:
 
             if "edit" in response and response["edit"].get("result") == "Success":
                 logger.info(f"Successfully edited page: {title or pageid}")
-                return response["edit"]
+                edit_result: Dict[str, Any] = response["edit"]
+                return edit_result
             else:
                 logger.error(f"Edit failed: {response}")
                 return response
@@ -340,12 +342,12 @@ class MediaWikiClient:
     async def search_pages(
         self,
         search_query: str,
-        namespaces: Optional[list] = None,
+        namespaces: Optional[List[int]] = None,
         limit: int = 10,
         offset: int = 0,
         what: str = "text",
-        info: Optional[list] = None,
-        prop: Optional[list] = None,
+        info: Optional[List[str]] = None,
+        prop: Optional[List[str]] = None,
         interwiki: bool = False,
         enable_rewrites: bool = True,
         sort_order: str = "relevance",
@@ -388,9 +390,9 @@ class MediaWikiClient:
             params["srnamespace"] = "|".join(str(ns) for ns in namespaces)
 
         # Set limits and pagination
-        params["srlimit"] = max(1, min(500, limit))
+        params["srlimit"] = str(max(1, min(500, limit)))
         if offset > 0:
-            params["sroffset"] = offset
+            params["sroffset"] = str(offset)
 
         # Set search type
         if what in ["text", "title", "nearmatch"]:

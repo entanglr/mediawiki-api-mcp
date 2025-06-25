@@ -359,7 +359,7 @@ async def test_list_tools():
     expected_description = """Search for pages using MediaWiki's search API.
 
     Args:
-        search_query: Search query string (required)
+        query: Search query string (required)
         namespaces: List of namespace IDs to search in (default: [0] for main namespace)
         limit: Maximum number of results (1-500, default: 10)
         offset: Search result offset for pagination (default: 0)
@@ -374,11 +374,11 @@ async def test_list_tools():
     assert search_tool.description == expected_description
 
     # Verify required fields
-    assert "search_query" in search_tool.inputSchema["required"]
+    assert "query" in search_tool.inputSchema["required"]
 
     # Verify search-specific properties exist
     properties = search_tool.inputSchema["properties"]
-    assert "search_query" in properties
+    assert "query" in properties
     assert "namespaces" in properties
     assert "limit" in properties
     assert "offset" in properties

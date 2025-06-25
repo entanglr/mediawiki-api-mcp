@@ -274,7 +274,7 @@ class TestSearchFunctionality:
                 "srsearch": "test query",
                 "format": "json",
                 "srnamespace": "0",
-                "srlimit": 10,
+                "srlimit": "10",
                 "srwhat": "text",
                 "srqiprofile": "engine_autoselect",
                 "srinfo": "totalhits|suggestion|rewrittenquery",

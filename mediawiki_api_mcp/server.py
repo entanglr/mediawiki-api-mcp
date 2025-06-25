@@ -69,22 +69,28 @@ async def wiki_page_edit(
     try:
         config = get_config()
         async with MediaWikiClient(config) as client:
-            # Call edit_page with proper typed arguments
-            result = await client.edit_page(
-                title=title if title else None,
-                pageid=pageid if pageid else None,
-                text=text if text else None,
-                summary=summary if summary else None,
-                section=section if section else None,
-                sectiontitle=sectiontitle if sectiontitle else None,
-                appendtext=appendtext if appendtext else None,
-                prependtext=prependtext if prependtext else None,
-                minor=minor,
-                bot=bot,
-                createonly=createonly,
-                nocreate=nocreate
-            )
-            return f"Page edit successful: {result}"
+            # Import here to avoid circular imports
+            from .handlers import handle_edit_page
+
+            # Convert FastMCP parameters to handler arguments
+            arguments = {
+                "title": title if title else None,
+                "pageid": pageid if pageid else None,
+                "text": text if text else None,
+                "summary": summary if summary else None,
+                "section": section if section else None,
+                "sectiontitle": sectiontitle if sectiontitle else None,
+                "appendtext": appendtext if appendtext else None,
+                "prependtext": prependtext if prependtext else None,
+                "minor": minor,
+                "bot": bot,
+                "createonly": createonly,
+                "nocreate": nocreate,
+            }
+
+            result = await handle_edit_page(client, arguments)
+            # Return the formatted text from the handler
+            return result[0].text if result else "No results"
     except Exception as e:
         logger.error(f"Wiki page edit failed: {e}")
         return f"Error: {str(e)}"
@@ -94,24 +100,40 @@ async def wiki_page_edit(
 async def wiki_page_get(
     title: str = "",
     pageid: int = 0,
+    method: str = "revisions",
+    format: str = "wikitext",
+    sentences: int = 0,
+    chars: int = 0,
 ) -> str:
     """Get information and content from a MediaWiki page.
 
     Args:
         title: Title of the page to retrieve
         pageid: Page ID of the page to retrieve (alternative to title)
+        method: Retrieval method - "revisions", "raw", "parse", or "extracts"
+        format: Content format - "wikitext", "html", or "text"
+        sentences: Limit extracts to this many sentences (extracts method only)
+        chars: Limit extracts to this many characters (extracts method only)
     """
     try:
         config = get_config()
         async with MediaWikiClient(config) as client:
-            if title:
-                info = await client.get_page_info(title=title)
-            elif pageid:
-                info = await client.get_page_info(pageid=pageid)
-            else:
-                return "Error: Either title or pageid must be provided"
+            # Import here to avoid circular imports
+            from .handlers import handle_get_page
 
-            return f"Page information retrieved: {info}"
+            # Convert FastMCP parameters to handler arguments
+            arguments = {
+                "title": title if title else None,
+                "pageid": pageid if pageid else None,
+                "method": method,
+                "format": format,
+                "sentences": sentences if sentences > 0 else None,
+                "chars": chars if chars > 0 else None,
+            }
+
+            result = await handle_get_page(client, arguments)
+            # Return the formatted text from the handler
+            return result[0].text if result else "No results"
     except Exception as e:
         logger.error(f"Wiki page get failed: {e}")
         return f"Error: {str(e)}"
@@ -119,7 +141,7 @@ async def wiki_page_get(
 
 @mcp.tool()
 async def wiki_search(
-    search_query: str,
+    query: str,
     namespaces: list[int] | None = None,
     limit: int = 10,
     offset: int = 0,
@@ -134,7 +156,7 @@ async def wiki_search(
     """Search for pages using MediaWiki's search API.
 
     Args:
-        search_query: Search query string (required)
+        query: Search query string (required)
         namespaces: List of namespace IDs to search in (default: [0] for main namespace)
         limit: Maximum number of results (1-500, default: 10)
         offset: Search result offset for pagination (default: 0)
@@ -154,7 +176,7 @@ async def wiki_search(
 
             # Convert FastMCP parameters to handler arguments
             arguments = {
-                "query": search_query,  # Handler expects "query" not "search_query"
+                "query": query,
                 "namespaces": namespaces,
                 "limit": limit,
                 "offset": offset,

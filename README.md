@@ -4,7 +4,7 @@ A Model Context Protocol (MCP) server that allows LLMs like Claude to interact w
 
 ## Features
 
-The server provides three main MCP tools with the `wiki_` prefix:
+The server provides various MCP tools with the `wiki_` prefix:
 
 - **`wiki_page_edit`**: Edit or create MediaWiki pages with comprehensive editing options
 - **`wiki_page_get`**: Retrieve page information and content

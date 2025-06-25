@@ -68,23 +68,5 @@ def get_edit_tools() -> List[types.Tool]:
                 },
                 "required": []
             }
-        ),
-        types.Tool(
-            name="wiki_page_get",
-            description="Get information and content of a MediaWiki page",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "title": {
-                        "type": "string",
-                        "description": "Title of the page to retrieve"
-                    },
-                    "pageid": {
-                        "type": "integer",
-                        "description": "Page ID of the page to retrieve (alternative to title)"
-                    }
-                },
-                "required": []
-            }
         )
     ]

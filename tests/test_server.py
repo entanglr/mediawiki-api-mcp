@@ -7,7 +7,7 @@ import pytest
 
 from mediawiki_api_mcp.client import MediaWikiClient, MediaWikiConfig
 from mediawiki_api_mcp.handlers import handle_edit_page, handle_get_page, handle_search
-from mediawiki_api_mcp.server import mcp, get_config
+from mediawiki_api_mcp.server import get_config, mcp
 
 
 @pytest.fixture

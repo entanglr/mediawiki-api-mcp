@@ -7,7 +7,7 @@ import pytest
 
 from mediawiki_api_mcp.client import MediaWikiClient, MediaWikiConfig
 from mediawiki_api_mcp.handlers import handle_edit_page, handle_get_page, handle_search
-from mediawiki_api_mcp.server import app, get_config
+from mediawiki_api_mcp.server import mcp, get_config
 
 
 @pytest.fixture
@@ -347,7 +347,7 @@ class TestExistingFunctionality:
 @pytest.mark.asyncio
 async def test_list_tools():
     """Test that search tool is included in tool list."""
-    tools = await app.list_tools()
+    tools = await mcp.list_tools()
 
     tool_names = [tool.name for tool in tools]
     assert "wiki_search" in tool_names

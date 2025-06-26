@@ -1,2 +1,3 @@
 [commands]
 mv = ["mv"]
+test = ["uv", "run", "pytest"]

@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 """Validation script to test the organized MediaWiki MCP server structure."""
 
-import sys
 import asyncio
-from typing import List
+import sys
 
 # Test imports
 try:
+    from mediawiki_api_mcp.server import app
     from mediawiki_api_mcp.tools import get_edit_tools, get_search_tools
-    from mediawiki_api_mcp.handlers import handle_edit_page, handle_get_page, handle_search
-    from mediawiki_api_mcp.server import app, get_config
-    from mediawiki_api_mcp.client import MediaWikiClient, MediaWikiConfig
-    import mcp.types as types
     print("✓ All imports successful")
 except ImportError as e:
     print(f"✗ Import error: {e}")

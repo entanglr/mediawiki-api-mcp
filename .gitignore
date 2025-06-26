@@ -54,7 +54,3 @@ temp/
 .repomix
 repomix-output.txt
 repomix-output.xml
-
-# Data files
-data/db/*.db
-data/notes/*.md

@@ -1,10 +1,11 @@
 """Test suite for MediaWiki search handlers."""
 
+from unittest.mock import MagicMock
+
 import pytest
-import asyncio
-from unittest.mock import AsyncMock, MagicMock
-from mediawiki_api_mcp.handlers.search import handle_search
+
 from mediawiki_api_mcp.client import MediaWikiClient
+from mediawiki_api_mcp.handlers.wiki_search import handle_search
 
 
 class TestSearchHandlers:
@@ -153,10 +154,10 @@ class TestSearchHandlers:
                         "pageid": 1,
                         "ns": 0,
                         "redirecttitle": "HomePage",
-                        "redirectsnippet": "Redirect <span class=\"searchmatch\">match</span>",
+                        "redirectsnippet": "<span class=\"searchmatch\">match</span>",
                         "sectiontitle": "Introduction",
                         "sectionsnippet": "Section <span class=\"searchmatch\">content</span>",
-                        "categorysnippet": "Category <span class=\"searchmatch\">info</span>",
+                        "categorysnippet": "<span class=\"searchmatch\">info</span>",
                         "isfilematch": True
                     }
                 ]
@@ -221,7 +222,7 @@ class TestSearchHandlers:
             "qiprofile": "popular_inclinks"
         }
 
-        result = await handle_search(mock_client, arguments)
+        await handle_search(mock_client, arguments)
 
         # Verify client was called with custom parameters
         mock_client.search_pages.assert_called_once_with(

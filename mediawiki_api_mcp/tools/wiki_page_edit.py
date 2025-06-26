@@ -1,14 +1,14 @@
 """MediaWiki edit tools definition."""
 
-from typing import List
+
 import mcp.types as types
 
 
-def get_edit_tools() -> List[types.Tool]:
+def get_edit_tools() -> list[types.Tool]:
     """Get edit-related MediaWiki tools."""
     return [
         types.Tool(
-            name="wiki_edit_page",
+            name="wiki_page_edit",
             description="Edit or create a MediaWiki page",
             inputSchema={
                 "type": "object",
@@ -64,24 +64,6 @@ def get_edit_tools() -> List[types.Tool]:
                         "type": "boolean",
                         "description": "Don't create the page if it doesn't exist",
                         "default": False
-                    }
-                },
-                "required": []
-            }
-        ),
-        types.Tool(
-            name="wiki_get_page",
-            description="Get information and content of a MediaWiki page",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "title": {
-                        "type": "string",
-                        "description": "Title of the page to retrieve"
-                    },
-                    "pageid": {
-                        "type": "integer",
-                        "description": "Page ID of the page to retrieve (alternative to title)"
                     }
                 },
                 "required": []

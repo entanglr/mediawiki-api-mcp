@@ -1,22 +1,16 @@
 """Main MCP server implementation for MediaWiki API integration."""
 
-import asyncio
 import logging
 import os
-from typing import Any, Dict, List, Sequence
 
-import mcp.types as types
-from mcp.server import Server
-from mcp.server.stdio import stdio_server
+from mcp.server.fastmcp import FastMCP
 
 from .client import MediaWikiClient, MediaWikiConfig
-from .tools import get_edit_tools, get_search_tools
-from .handlers import handle_edit_page, handle_get_page, handle_search
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = Server("mediawiki-api-server")
+mcp = FastMCP("mediawiki-api-server")
 
 
 def get_config() -> MediaWikiConfig:
@@ -41,55 +35,171 @@ def get_config() -> MediaWikiConfig:
     )
 
 
-@app.list_tools()
-async def list_tools() -> List[types.Tool]:
-    """List available MediaWiki tools."""
-    tools = []
-    tools.extend(get_edit_tools())
-    tools.extend(get_search_tools())
-    return tools
+@mcp.tool()
+async def wiki_page_edit(
+    title: str = "",
+    pageid: int = 0,
+    text: str = "",
+    summary: str = "",
+    section: str = "",
+    sectiontitle: str = "",
+    appendtext: str = "",
+    prependtext: str = "",
+    minor: bool = False,
+    bot: bool = True,
+    createonly: bool = False,
+    nocreate: bool = False,
+) -> str:
+    """Edit or create a MediaWiki page.
 
-
-@app.call_tool()
-async def call_tool(
-    name: str,
-    arguments: Dict[str, Any]
-) -> Sequence[types.TextContent]:
-    """Handle tool calls for MediaWiki operations."""
+    Args:
+        title: Title of the page to edit
+        pageid: Page ID of the page to edit (alternative to title)
+        text: New page content (replaces existing content)
+        summary: Edit summary describing the changes
+        section: Section identifier (0 for top section, 'new' for new section)
+        sectiontitle: Title for new section when using section='new'
+        appendtext: Text to append to the page or section
+        prependtext: Text to prepend to the page or section
+        minor: Mark this edit as a minor edit
+        bot: Mark this edit as a bot edit
+        createonly: Don't edit the page if it exists already
+        nocreate: Don't create the page if it doesn't exist
+    """
     try:
         config = get_config()
-
         async with MediaWikiClient(config) as client:
-            if name == "wiki_edit_page":
-                return await handle_edit_page(client, arguments)
-            elif name == "wiki_get_page":
-                return await handle_get_page(client, arguments)
-            elif name == "wiki_search":
-                return await handle_search(client, arguments)
-            else:
-                raise ValueError(f"Unknown tool: {name}")
+            # Import here to avoid circular imports
+            from .handlers import handle_edit_page
 
+            # Convert FastMCP parameters to handler arguments
+            arguments = {
+                "title": title if title else None,
+                "pageid": pageid if pageid else None,
+                "text": text if text else None,
+                "summary": summary if summary else None,
+                "section": section if section else None,
+                "sectiontitle": sectiontitle if sectiontitle else None,
+                "appendtext": appendtext if appendtext else None,
+                "prependtext": prependtext if prependtext else None,
+                "minor": minor,
+                "bot": bot,
+                "createonly": createonly,
+                "nocreate": nocreate,
+            }
+
+            result = await handle_edit_page(client, arguments)
+            # Return the formatted text from the handler
+            return result[0].text if result else "No results"
     except Exception as e:
-        logger.error(f"Tool call failed: {e}")
-        return [types.TextContent(
-            type="text",
-            text=f"Error: {str(e)}"
-        )]
+        logger.error(f"Wiki page edit failed: {e}")
+        return f"Error: {str(e)}"
 
 
-async def main():
-    """Main entry point for the MCP server."""
-    async with stdio_server() as (read_stream, write_stream):
-        await app.run(
-            read_stream,
-            write_stream,
-            app.create_initialization_options()
-        )
+@mcp.tool()
+async def wiki_page_get(
+    title: str = "",
+    pageid: int = 0,
+    method: str = "revisions",
+    format: str = "wikitext",
+    sentences: int = 0,
+    chars: int = 0,
+) -> str:
+    """Get information and content from a MediaWiki page.
+
+    Args:
+        title: Title of the page to retrieve
+        pageid: Page ID of the page to retrieve (alternative to title)
+        method: Retrieval method - "revisions", "raw", "parse", or "extracts"
+        format: Content format - "wikitext", "html", or "text"
+        sentences: Limit extracts to this many sentences (extracts method only)
+        chars: Limit extracts to this many characters (extracts method only)
+    """
+    try:
+        config = get_config()
+        async with MediaWikiClient(config) as client:
+            # Import here to avoid circular imports
+            from .handlers import handle_get_page
+
+            # Convert FastMCP parameters to handler arguments
+            arguments = {
+                "title": title if title else None,
+                "pageid": pageid if pageid else None,
+                "method": method,
+                "format": format,
+                "sentences": sentences if sentences > 0 else None,
+                "chars": chars if chars > 0 else None,
+            }
+
+            result = await handle_get_page(client, arguments)
+            # Return the formatted text from the handler
+            return result[0].text if result else "No results"
+    except Exception as e:
+        logger.error(f"Wiki page get failed: {e}")
+        return f"Error: {str(e)}"
 
 
-def run_server():
+@mcp.tool()
+async def wiki_search(
+    query: str,
+    namespaces: list[int] | None = None,
+    limit: int = 10,
+    offset: int = 0,
+    what: str = "text",
+    info: list[str] | None = None,
+    prop: list[str] | None = None,
+    interwiki: bool = False,
+    enable_rewrites: bool = True,
+    sort: str = "relevance",
+    qiprofile: str = "engine_autoselect",
+) -> str:
+    """Search for pages using MediaWiki's search API.
+
+    Args:
+        query: Search query string (required)
+        namespaces: List of namespace IDs to search in (default: [0] for main namespace)
+        limit: Maximum number of results (1-500, default: 10)
+        offset: Search result offset for pagination (default: 0)
+        what: Type of search - "text", "title", or "nearmatch" (default: "text")
+        info: Metadata to return (options: rewrittenquery, suggestion, totalhits)
+        prop: Properties to return for each search result
+        interwiki: Include interwiki results if available (default: false)
+        enable_rewrites: Enable internal query rewriting for better results (default: true)
+        sort: Sort order of returned results (default: relevance)
+        qiprofile: Query independent ranking profile (default: engine_autoselect)
+    """
+    try:
+        config = get_config()
+        async with MediaWikiClient(config) as client:
+            # Import here to avoid circular imports
+            from .handlers import handle_search
+
+            # Convert FastMCP parameters to handler arguments
+            arguments = {
+                "query": query,
+                "namespaces": namespaces,
+                "limit": limit,
+                "offset": offset,
+                "what": what,
+                "info": info,
+                "prop": prop,
+                "interwiki": interwiki,
+                "enable_rewrites": enable_rewrites,
+                "sort": sort,
+                "qiprofile": qiprofile,
+            }
+
+            result = await handle_search(client, arguments)
+            # Return the formatted text from the handler
+            return result[0].text if result else "No results"
+    except Exception as e:
+        logger.error(f"Wiki search failed: {e}")
+        return f"Error: {str(e)}"
+
+
+def run_server() -> None:
     """Synchronous entry point for the MCP server."""
-    asyncio.run(main())
+    mcp.run(transport='stdio')
 
 
 if __name__ == "__main__":

@@ -150,7 +150,7 @@ async def wiki_search(
     prop: list[str] | None = None,
     interwiki: bool = False,
     enable_rewrites: bool = True,
-    sort: str = "relevance",
+    srsort: str = "relevance",
     qiprofile: str = "engine_autoselect",
 ) -> str:
     """Search for pages using MediaWiki's search API.
@@ -165,7 +165,7 @@ async def wiki_search(
         prop: Properties to return for each search result
         interwiki: Include interwiki results if available (default: false)
         enable_rewrites: Enable internal query rewriting for better results (default: true)
-        sort: Sort order of returned results (default: relevance)
+        srsort: Sort order of returned results (default: relevance)
         qiprofile: Query independent ranking profile (default: engine_autoselect)
     """
     try:
@@ -185,7 +185,7 @@ async def wiki_search(
                 "prop": prop,
                 "interwiki": interwiki,
                 "enable_rewrites": enable_rewrites,
-                "sort": sort,
+                "srsort": srsort,
                 "qiprofile": qiprofile,
             }
 

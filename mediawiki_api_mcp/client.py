@@ -347,7 +347,7 @@ class MediaWikiClient:
         prop: list[str] | None = None,
         interwiki: bool = False,
         enable_rewrites: bool = True,
-        sort_order: str = "relevance",
+        srsort: str = "relevance",
         qiprofile: str = "engine_autoselect"
     ) -> dict[str, Any]:
         """
@@ -363,7 +363,7 @@ class MediaWikiClient:
             prop: Properties to return - list from available search properties
             interwiki: Include interwiki results if available (default: False)
             enable_rewrites: Enable internal query rewriting (default: True)
-            sort_order: Sort order for results (default: "relevance")
+            srsort: Sort order for results (default: "relevance")
             qiprofile: Query independent ranking profile (default: "engine_autoselect")
 
         Returns:
@@ -437,8 +437,8 @@ class MediaWikiClient:
             "incoming_links_desc", "just_match", "last_edit_asc", "last_edit_desc",
             "none", "random", "relevance", "user_random"
         ]
-        if sort_order in valid_sorts:
-            params["srsort"] = sort_order
+        if srsort in valid_sorts:
+            params["srsort"] = srsort
 
         try:
             response = await self._make_request("GET", params=params)

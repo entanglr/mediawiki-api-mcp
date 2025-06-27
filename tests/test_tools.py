@@ -89,7 +89,7 @@ class TestToolDefinitions:
         assert "limit" in properties
         assert "offset" in properties
         assert "what" in properties
-        assert "sort" in properties
+        assert "srsort" in properties
 
         # Check property types and constraints
         assert properties["query"]["type"] == "string"
@@ -105,7 +105,7 @@ class TestToolDefinitions:
         assert "nearmatch" in properties["what"]["enum"]
 
         # Check sort options
-        sort_options = properties["sort"]["enum"]
+        sort_options = properties["srsort"]["enum"]
         assert "relevance" in sort_options
         assert "create_timestamp_asc" in sort_options
         assert "last_edit_desc" in sort_options

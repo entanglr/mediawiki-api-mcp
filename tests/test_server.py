@@ -109,7 +109,7 @@ class TestSearchFunctionality:
             prop=None,
             interwiki=False,
             enable_rewrites=True,
-            sort_order="relevance",
+            srsort="relevance",
             qiprofile="engine_autoselect"
         )
 
@@ -129,7 +129,7 @@ class TestSearchFunctionality:
             "prop": ["size", "wordcount", "snippet"],
             "interwiki": True,
             "enable_rewrites": False,
-            "sort": "last_edit_desc",
+            "srsort": "last_edit_desc",
             "qiprofile": "classic"
         }
 
@@ -148,7 +148,7 @@ class TestSearchFunctionality:
             prop=["size", "wordcount", "snippet"],
             interwiki=True,
             enable_rewrites=False,
-            sort_order="last_edit_desc",
+            srsort="last_edit_desc",
             qiprofile="classic"
         )
 
@@ -368,7 +368,7 @@ async def test_list_tools():
         prop: Properties to return for each search result
         interwiki: Include interwiki results if available (default: false)
         enable_rewrites: Enable internal query rewriting for better results (default: true)
-        sort: Sort order of returned results (default: relevance)
+        srsort: Sort order of returned results (default: relevance)
         qiprofile: Query independent ranking profile (default: engine_autoselect)
     """
     assert search_tool.description == expected_description
@@ -387,7 +387,7 @@ async def test_list_tools():
     assert "prop" in properties
     assert "interwiki" in properties
     assert "enable_rewrites" in properties
-    assert "sort" in properties
+    assert "srsort" in properties
     assert "qiprofile" in properties
 
 

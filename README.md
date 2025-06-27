@@ -225,7 +225,7 @@ Comprehensive search functionality using MediaWiki's advanced search API with ex
   - `"totalhits"`: Total number of matching pages
 
 **Advanced Search Parameters:**
-- `sort` (string): Sort order for results (default: "relevance")
+- `srsort` (string): Sort order for results (default: "relevance")
   - `"relevance"`: Sort by search relevance score
   - `"create_timestamp_asc"` / `"create_timestamp_desc"`: Sort by page creation date
   - `"last_edit_asc"` / `"last_edit_desc"`: Sort by last edit timestamp

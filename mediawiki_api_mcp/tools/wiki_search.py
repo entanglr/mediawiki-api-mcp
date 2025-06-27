@@ -72,7 +72,7 @@ def get_search_tools() -> list[types.Tool]:
                         "description": "Enable internal query rewriting for better results (default: true)",
                         "default": True
                     },
-                    "sort": {
+                    "srsort": {
                         "type": "string",
                         "enum": [
                             "create_timestamp_asc", "create_timestamp_desc",

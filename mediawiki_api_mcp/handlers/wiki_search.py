@@ -33,7 +33,7 @@ async def handle_search(
     prop = arguments.get("prop")
     interwiki = arguments.get("interwiki", False)
     enable_rewrites = arguments.get("enable_rewrites", True)
-    sort_order = arguments.get("sort", "relevance")
+    srsort = arguments.get("srsort", "relevance")
     qiprofile = arguments.get("qiprofile", "engine_autoselect")
 
     try:
@@ -47,7 +47,7 @@ async def handle_search(
             prop=prop,
             interwiki=interwiki,
             enable_rewrites=enable_rewrites,
-            sort_order=sort_order,
+            srsort=srsort,
             qiprofile=qiprofile
         )
 

@@ -1,6 +1,6 @@
 # MediaWiki API MCP Server
 
-A Model Context Protocol (MCP) server that allows LLMs like Claude to interact with MediaWiki installations through the MediaWiki API as a bot user.
+A Model Context Protocol (MCP) server that allows LLMs to interact with MediaWiki installations through the MediaWiki API as a bot user.
 
 ## Features
 

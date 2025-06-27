@@ -134,7 +134,7 @@ class TestSearchHandlers:
             prop=None,
             interwiki=False,
             enable_rewrites=True,
-            sort_order="relevance",
+            srsort="relevance",
             qiprofile="engine_autoselect"
         )
 
@@ -218,7 +218,7 @@ class TestSearchHandlers:
             "query": "test",
             "namespaces": [0, 1],
             "what": "title",
-            "sort": "last_edit_desc",
+            "srsort": "last_edit_desc",
             "qiprofile": "popular_inclinks"
         }
 
@@ -235,6 +235,6 @@ class TestSearchHandlers:
             prop=None,
             interwiki=False,
             enable_rewrites=True,
-            sort_order="last_edit_desc",
+            srsort="last_edit_desc",
             qiprofile="popular_inclinks"
         )

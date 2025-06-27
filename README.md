@@ -9,6 +9,7 @@ The server provides various MCP tools with the `wiki_` prefix:
 - **`wiki_page_edit`**: Edit or create MediaWiki pages with comprehensive editing options
 - **`wiki_page_get`**: Retrieve page information and content
 - **`wiki_search`**: Search for pages using MediaWiki's search API with advanced filtering
+- **`wiki_opensearch`**: Search using OpenSearch protocol for quick suggestions and autocomplete
 
 ## Project Structure
 
@@ -17,31 +18,34 @@ The project is organized into modular components for maintainability:
 ```
 mediawiki_api_mcp/
 ├── __init__.py
-├── server.py             # Main MCP server implementation
-├── client.py             # MediaWiki API client
-├── tools/                # Tool definitions
+├── server.py               # Main MCP server implementation
+├── client.py               # MediaWiki API client
+├── tools/                  # Tool definitions
 │   ├── __init__.py
-│   ├── wiki_page_edit.py # Edit page tools
-│   ├── wiki_page_get.py  # Get page tools
-│   └── wiki_search.py    # Search tools
-└── handlers/             # Tool handlers
+│   ├── wiki_page_edit.py   # Edit page tools
+│   ├── wiki_page_get.py    # Get page tools
+│   └── wiki_search.py      # Search tools
+└── handlers/               # Tool handlers
     ├── __init__.py
-    ├── wiki_page_edit.py # Edit page handlers
-    ├── wiki_page_get.py  # Get page handlers
-    └── wiki_search.py    # Search handlers
+    ├── wiki_page_edit.py   # Edit page handlers
+    ├── wiki_page_get.py    # Get page handlers
+    ├── wiki_search.py      # Search handlers
+    └── wiki_opensearch.py  # OpenSearch handlers
 
 tests/
 ├── __init__.py
-├── test_server.py         # Integration tests
-├── test_wiki_page_edit.py # Edit handler tests
-├── test_wiki_page_get.py  # Get handler tests
-├── test_wiki_search.py    # Search handler tests
-└── test_tools.py          # Tool definition tests
+├── test_server.py          # Integration tests
+├── test_wiki_page_edit.py  # Edit handler tests
+├── test_wiki_page_get.py   # Get handler tests
+├── test_wiki_search.py     # Search handler tests
+├── test_wiki_opensearch.py # OpenSearch handler tests
+└── test_tools.py           # Tool definition tests
 ```
 
 ## Installation
 
 1. Clone the repository
+
 2. Install dependencies using UV:
 
 ```bash
@@ -51,10 +55,10 @@ uv install
 3. Set up environment variables:
 
 ```bash
-export MEDIAWIKI_API_URL="https://your-wiki.com/api.php"
-export MEDIAWIKI_API_BOT_USERNAME="your_bot_username"
-export MEDIAWIKI_API_BOT_PASSWORD="your_bot_password"
-export MEDIAWIKI_API_BOT_USER_AGENT="MediaWiki-MCP-Bot/1.0"  # Optional
+export MEDIAWIKI_API_URL="http://mediawiki.test/api.php"
+export MEDIAWIKI_API_BOT_USERNAME="YourUserName@YourBotName"
+export MEDIAWIKI_API_BOT_PASSWORD="YourBotPassword"
+export MEDIAWIKI_API_BOT_USER_AGENT="MediaWiki-MCP-Bot/1.0 (your.email@mediawiki.test)"  # Optional
 ```
 
 ## Usage
@@ -73,6 +77,13 @@ python -m mediawiki_api_mcp.server
 
 ### Configuration with Claude Desktop
 
+#### Configuration File Location
+
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+#### Template Configuration
+
 Add to your Claude Desktop configuration file:
 
 ```json
@@ -80,17 +91,47 @@ Add to your Claude Desktop configuration file:
   "mcpServers": {
     "mediawiki-api": {
       "command": "uv",
-      "args": ["run", "mediawiki-api-mcp"],
+      "args": [
+        "--directory",
+        "/absolute/path/to/mediawiki-api-mcp",
+        "run",
+        "mediawiki-api-mcp"
+      ],
       "env": {
-        "MEDIAWIKI_API_URL": "https://your-wiki.com/api.php",
-        "MEDIAWIKI_API_BOT_USERNAME": "your_bot_username",
-        "MEDIAWIKI_API_BOT_PASSWORD": "your_bot_password",
-        "MEDIAWIKI_API_BOT_USER_AGENT": "MediaWiki-MCP-Bot/1.0"
+        "MEDIAWIKI_API_URL": "http://mediawiki.test/api.php",
+        "MEDIAWIKI_API_BOT_USERNAME": "YourUserName@YourBotName",
+        "MEDIAWIKI_API_BOT_PASSWORD": "YourBotPassword",
+        "MEDIAWIKI_API_BOT_USER_AGENT": "MediaWiki-MCP-Bot/1.0 (your.email@mediawiki.test)"
       }
     }
   }
 }
 ```
+
+#### Configuration Instructions
+
+1. Replace `/absolute/path/to/mediawiki-api-mcp` with the actual absolute path to this project directory
+2. Update `MEDIAWIKI_API_URL` with your MediaWiki installation's API endpoint
+3. Set `MEDIAWIKI_API_BOT_USERNAME` to your bot username (typically in format `YourUserName@YourBotName`)
+4. Set `MEDIAWIKI_API_BOT_PASSWORD` to the generated bot password from your wiki's `Special:BotPasswords` page
+5. Customize `MEDIAWIKI_API_BOT_USER_AGENT` with appropriate contact information (optional)
+
+##### Bot Password Setup
+
+Create bot credentials at e.g.: `http://mediawiki.test/index.php/Special:BotPasswords`
+
+Required permissions:
+
+- **Basic rights**: Read pages
+- **High-volume editing**: Edit existing pages, Create, edit, and move pages
+- Additional permissions as needed for your specific use case
+
+##### Security Notes
+
+- Keep your bot credentials secure and never commit them to version control
+- Use the principle of least privilege when setting bot permissions
+- Monitor bot activity through your MediaWiki's logging interface
+- Consider using IP restrictions for additional security
 
 ## Tools
 
@@ -188,7 +229,7 @@ Comprehensive search functionality using MediaWiki's advanced search API with ex
   - `"totalhits"`: Total number of matching pages
 
 **Advanced Search Parameters:**
-- `sort` (string): Sort order for results (default: "relevance")
+- `srsort` (string): Sort order for results (default: "relevance")
   - `"relevance"`: Sort by search relevance score
   - `"create_timestamp_asc"` / `"create_timestamp_desc"`: Sort by page creation date
   - `"last_edit_asc"` / `"last_edit_desc"`: Sort by last edit timestamp
@@ -208,6 +249,44 @@ Comprehensive search functionality using MediaWiki's advanced search API with ex
   - `"popular_inclinks_pv"`: Boost popular pages with incoming links and page views
   - `"wsum_inclinks"` / `"wsum_inclinks_pv"`: Weighted sum algorithms with link metrics
 
+### wiki_opensearch
+
+Search the wiki using the OpenSearch protocol, which provides fast suggestions and autocomplete functionality. Returns results in the standard OpenSearch format with titles, descriptions, and URLs.
+
+**Core Search Parameters:**
+- `search` (string): **Required.** Search string to find matching pages
+
+**Namespace Filtering Parameters:**
+- `namespace` (array of integers): List of namespace IDs to search within (default: [0] for main namespace)
+  - Common namespaces: 0 (Main), 1 (Talk), 2 (User), 4 (Project), 6 (File), 10 (Template), 14 (Category)
+
+**Result Control Parameters:**
+- `limit` (integer): Maximum number of results to return. Range: 1-500 (default: 10)
+
+**Search Profile Parameters:**
+- `profile` (string): Search profile that determines search behavior (default: "engine_autoselect")
+  - `"strict"`: Strict profile with few punctuation characters removed but diacritics and stress marks kept
+  - `"normal"`: Few punctuation characters, some diacritics and stopwords removed
+  - `"normal-subphrases"`: Normal profile that also matches subphrases/subpages
+  - `"fuzzy"`: Similar to normal with typo correction (two typos supported)
+  - `"fast-fuzzy"`: Experimental fuzzy profile for rapid results
+  - `"fuzzy-subphrases"`: Fuzzy profile that also matches subphrases/subpages
+  - `"classic"`: Classic prefix matching with some punctuation and diacritics removed
+  - `"engine_autoselect"`: Let the search engine decide on the best profile
+
+**Redirect Handling Parameters:**
+- `redirects` (string): How to handle redirect pages
+  - `"return"`: Return the redirect page itself in results
+  - `"resolve"`: Return the target page that the redirect points to
+
+**Response Format Parameters:**
+- `format` (string): Output format for the response (default: "json")
+  - `"json"`: JSON format response
+  - `"xml"`: XML format response
+
+**Advanced Parameters:**
+- `warningsaserror` (boolean): Treat API warnings as errors (default: false)
+
 ## Development
 
 ### Running Tests
@@ -223,6 +302,7 @@ uv run pytest tests/test_server.py
 uv run pytest tests/test_tools.py
 uv run pytest tests/test_wiki_page_edit.py
 uv run pytest tests/test_wiki_search.py
+uv run pytest tests/test_wiki_opensearch.py
 ```
 
 ### Code Quality
@@ -297,4 +377,4 @@ All errors are returned as MCP `TextContent` responses for LLM visibility.
 
 ## License
 
-[Your License Here]
+[MIT License](https://github.com/entanglr/mediawiki-api-mcp/blob/main/LICENSE)

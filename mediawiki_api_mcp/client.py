@@ -347,7 +347,7 @@ class MediaWikiClient:
         prop: list[str] | None = None,
         interwiki: bool = False,
         enable_rewrites: bool = True,
-        sort_order: str = "relevance",
+        srsort: str = "relevance",
         qiprofile: str = "engine_autoselect"
     ) -> dict[str, Any]:
         """
@@ -363,7 +363,7 @@ class MediaWikiClient:
             prop: Properties to return - list from available search properties
             interwiki: Include interwiki results if available (default: False)
             enable_rewrites: Enable internal query rewriting (default: True)
-            sort_order: Sort order for results (default: "relevance")
+            srsort: Sort order for results (default: "relevance")
             qiprofile: Query independent ranking profile (default: "engine_autoselect")
 
         Returns:
@@ -437,8 +437,8 @@ class MediaWikiClient:
             "incoming_links_desc", "just_match", "last_edit_asc", "last_edit_desc",
             "none", "random", "relevance", "user_random"
         ]
-        if sort_order in valid_sorts:
-            params["srsort"] = sort_order
+        if srsort in valid_sorts:
+            params["srsort"] = srsort
 
         try:
             response = await self._make_request("GET", params=params)
@@ -447,4 +447,74 @@ class MediaWikiClient:
 
         except Exception as e:
             logger.error(f"Search request failed: {e}")
+            raise
+
+    async def opensearch(
+        self,
+        search: str,
+        namespace: list[int] | None = None,
+        limit: int = 10,
+        profile: str = "engine_autoselect",
+        redirects: str | None = None,
+        format: str = "json",
+        warningsaserror: bool = False
+    ) -> dict[str, Any]:
+        """
+        Search the wiki using the OpenSearch protocol.
+
+        Args:
+            search: Search string (required)
+            namespace: Namespaces to search (default: [0] for main namespace)
+            limit: Maximum number of results (1-500, default: 10)
+            profile: Search profile (default: "engine_autoselect")
+            redirects: How to handle redirects - "return" or "resolve"
+            format: Output format (default: "json")
+            warningsaserror: Treat warnings as errors (default: False)
+
+        Returns:
+            Dictionary containing OpenSearch results in standard format:
+            [search_term, [titles], [descriptions], [urls]]
+        """
+        if not search:
+            raise ValueError("Search parameter is required")
+
+        # Build opensearch parameters
+        params = {
+            "action": "opensearch",
+            "search": search,
+            "format": format
+        }
+
+        # Set namespaces (default to main namespace if not specified)
+        if namespace is None:
+            namespace = [0]
+        if namespace:
+            params["namespace"] = "|".join(str(ns) for ns in namespace)
+
+        # Set limit (clamp to valid range)
+        params["limit"] = str(max(1, min(500, limit)))
+
+        # Set search profile
+        valid_profiles = [
+            "strict", "normal", "normal-subphrases", "fuzzy", "fast-fuzzy",
+            "fuzzy-subphrases", "classic", "engine_autoselect"
+        ]
+        if profile in valid_profiles:
+            params["profile"] = profile
+
+        # Set redirect handling
+        if redirects in ["return", "resolve"]:
+            params["redirects"] = redirects
+
+        # Set warnings as error flag
+        if warningsaserror:
+            params["warningsaserror"] = "1"
+
+        try:
+            response = await self._make_request("GET", params=params)
+            logger.info(f"OpenSearch completed for query: '{search}'")
+            return response
+
+        except Exception as e:
+            logger.error(f"OpenSearch request failed: {e}")
             raise

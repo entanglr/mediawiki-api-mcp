@@ -150,7 +150,7 @@ async def wiki_search(
     prop: list[str] | None = None,
     interwiki: bool = False,
     enable_rewrites: bool = True,
-    sort: str = "relevance",
+    srsort: str = "relevance",
     qiprofile: str = "engine_autoselect",
 ) -> str:
     """Search for pages using MediaWiki's search API.
@@ -165,7 +165,7 @@ async def wiki_search(
         prop: Properties to return for each search result
         interwiki: Include interwiki results if available (default: false)
         enable_rewrites: Enable internal query rewriting for better results (default: true)
-        sort: Sort order of returned results (default: relevance)
+        srsort: Sort order of returned results (default: relevance)
         qiprofile: Query independent ranking profile (default: engine_autoselect)
     """
     try:
@@ -185,7 +185,7 @@ async def wiki_search(
                 "prop": prop,
                 "interwiki": interwiki,
                 "enable_rewrites": enable_rewrites,
-                "sort": sort,
+                "srsort": srsort,
                 "qiprofile": qiprofile,
             }
 
@@ -194,6 +194,52 @@ async def wiki_search(
             return result[0].text if result else "No results"
     except Exception as e:
         logger.error(f"Wiki search failed: {e}")
+        return f"Error: {str(e)}"
+
+
+@mcp.tool()
+async def wiki_opensearch(
+    search: str,
+    namespace: list[int] | None = None,
+    limit: int = 10,
+    profile: str = "engine_autoselect",
+    redirects: str = "",
+    format: str = "json",
+    warningsaserror: bool = False,
+) -> str:
+    """Search the wiki using the OpenSearch protocol.
+
+    Args:
+        search: Search string (required)
+        namespace: Namespaces to search (default: [0] for main namespace)
+        limit: Maximum number of results (1-500, default: 10)
+        profile: Search profile (default: "engine_autoselect")
+        redirects: How to handle redirects - "return" or "resolve"
+        format: Output format (default: "json")
+        warningsaserror: Treat warnings as errors (default: False)
+    """
+    try:
+        config = get_config()
+        async with MediaWikiClient(config) as client:
+            # Import here to avoid circular imports
+            from .handlers import handle_opensearch
+
+            # Convert FastMCP parameters to handler arguments
+            arguments = {
+                "search": search,
+                "namespace": namespace,
+                "limit": limit,
+                "profile": profile,
+                "redirects": redirects if redirects else None,
+                "format": format,
+                "warningsaserror": warningsaserror,
+            }
+
+            result = await handle_opensearch(client, arguments)
+            # Return the formatted text from the handler
+            return result[0].text if result else "No results"
+    except Exception as e:
+        logger.error(f"Wiki opensearch failed: {e}")
         return f"Error: {str(e)}"
 
 

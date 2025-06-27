@@ -1,4 +1,4 @@
-# MediaWiki MCP Server
+# MediaWiki API MCP Server
 
 A Model Context Protocol (MCP) server that allows LLMs like Claude to interact with MediaWiki installations through the MediaWiki API as a bot user.
 

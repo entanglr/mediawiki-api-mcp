@@ -1,7 +1,8 @@
 """Tests for wiki_meta_siteinfo tool."""
 
+from unittest.mock import AsyncMock
+
 import pytest
-from unittest.mock import AsyncMock, patch
 
 from mediawiki_api_mcp.handlers.wiki_meta_siteinfo import handle_meta_siteinfo
 

@@ -282,3 +282,142 @@ async def test_handle_meta_siteinfo_file_extensions():
     assert "png" in result[0].text
     assert "jpg" in result[0].text
     assert "pdf" in result[0].text
+
+
+@pytest.mark.asyncio
+async def test_handle_meta_siteinfo_languages():
+    """Test getting languages information."""
+    mock_client = AsyncMock()
+    mock_client.get_siteinfo.return_value = {
+        "query": {
+            "languages": [
+                {"code": "en", "*": "English"},
+                {"code": "es", "*": "español"},
+                {"code": "fr", "*": "français"},
+                {"code": "de", "*": "Deutsch"}
+            ]
+        }
+    }
+
+    arguments = {"siprop": ["languages"]}
+    result = await handle_meta_siteinfo(mock_client, arguments)
+
+    assert len(result) == 1
+    assert result[0].type == "text"
+    assert "Supported Languages" in result[0].text
+    assert "en: English" in result[0].text
+    assert "es: español" in result[0].text
+    assert "fr: français" in result[0].text
+    assert "de: Deutsch" in result[0].text
+
+
+@pytest.mark.asyncio
+async def test_handle_meta_siteinfo_skins():
+    """Test getting skins information."""
+    mock_client = AsyncMock()
+    mock_client.get_siteinfo.return_value = {
+        "query": {
+            "skins": [
+                {"code": "vector", "*": "Vector"},
+                {"code": "monobook", "*": "MonoBook"},
+                {"code": "timeless", "*": "Timeless"},
+                {"code": "modern", "*": "Modern"}
+            ]
+        }
+    }
+
+    arguments = {"siprop": ["skins"]}
+    result = await handle_meta_siteinfo(mock_client, arguments)
+
+    assert len(result) == 1
+    assert result[0].type == "text"
+    assert "Skins" in result[0].text
+    assert "Vector" in result[0].text
+    assert "MonoBook" in result[0].text
+    assert "Timeless" in result[0].text
+    assert "Modern" in result[0].text
+
+
+@pytest.mark.asyncio
+async def test_handle_meta_siteinfo_languages_legacy_format():
+    """Test getting languages information in legacy dictionary format."""
+    mock_client = AsyncMock()
+    mock_client.get_siteinfo.return_value = {
+        "query": {
+            "languages": {
+                "en": "English",
+                "es": "español",
+                "fr": "français"
+            }
+        }
+    }
+
+    arguments = {"siprop": ["languages"]}
+    result = await handle_meta_siteinfo(mock_client, arguments)
+
+    assert len(result) == 1
+    assert result[0].type == "text"
+    assert "Supported Languages" in result[0].text
+    assert "en: English" in result[0].text
+    assert "es: español" in result[0].text
+    assert "fr: français" in result[0].text
+
+
+@pytest.mark.asyncio
+async def test_handle_meta_siteinfo_skins_legacy_format():
+    """Test getting skins information in legacy dictionary format."""
+    mock_client = AsyncMock()
+    mock_client.get_siteinfo.return_value = {
+        "query": {
+            "skins": {
+                "vector": {"*": "Vector"},
+                "monobook": {"*": "MonoBook"},
+                "timeless": {"*": "Timeless"}
+            }
+        }
+    }
+
+    arguments = {"siprop": ["skins"]}
+    result = await handle_meta_siteinfo(mock_client, arguments)
+
+    assert len(result) == 1
+    assert result[0].type == "text"
+    assert "Skins" in result[0].text
+    assert "Vector" in result[0].text
+    assert "MonoBook" in result[0].text
+    assert "Timeless" in result[0].text
+
+
+@pytest.mark.asyncio
+async def test_handle_meta_siteinfo_combined_props():
+    """Test getting multiple types including languages and skins."""
+    mock_client = AsyncMock()
+    mock_client.get_siteinfo.return_value = {
+        "query": {
+            "general": {
+                "sitename": "Test Wiki",
+                "generator": "MediaWiki 1.39.0"
+            },
+            "languages": [
+                {"code": "en", "*": "English"},
+                {"code": "es", "*": "español"}
+            ],
+            "skins": [
+                {"code": "vector", "*": "Vector"},
+                {"code": "monobook", "*": "MonoBook"}
+            ]
+        }
+    }
+
+    arguments = {"siprop": ["general", "languages", "skins"]}
+    result = await handle_meta_siteinfo(mock_client, arguments)
+
+    assert len(result) == 1
+    assert result[0].type == "text"
+    assert "General Information" in result[0].text
+    assert "Supported Languages" in result[0].text
+    assert "Skins" in result[0].text
+    assert "Test Wiki" in result[0].text
+    assert "en: English" in result[0].text
+    assert "Vector" in result[0].text
+

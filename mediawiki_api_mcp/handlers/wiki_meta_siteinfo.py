@@ -187,18 +187,35 @@ def format_siteinfo_section(section_name: str, data: Any) -> str:
         output += "Skins:\n"
         output += "-" * 6 + "\n"
 
-        for skin_key, skin_data in data.items():
-            if isinstance(skin_data, dict):
-                name = skin_data.get("*", skin_key)
-                output += f"  {name}\n"
+        if isinstance(data, list):
+            # Handle as list of skin objects
+            for skin in data:
+                if isinstance(skin, dict):
+                    name = skin.get("*", skin.get("code", ""))
+                    output += f"  {name}\n"
+        elif isinstance(data, dict):
+            # Handle as dictionary (legacy format)
+            for skin_key, skin_data in data.items():
+                if isinstance(skin_data, dict):
+                    name = skin_data.get("*", skin_key)
+                    output += f"  {name}\n"
 
     elif section_name == "languages":
         output += "Supported Languages:\n"
         output += "-" * 20 + "\n"
 
-        for lang_code, lang_name in data.items():
-            if isinstance(lang_name, str):
-                output += f"  {lang_code}: {lang_name}\n"
+        if isinstance(data, list):
+            # Handle as list of language objects
+            for lang in data:
+                if isinstance(lang, dict):
+                    code = lang.get("code", "")
+                    name = lang.get("*", code)
+                    output += f"  {code}: {name}\n"
+        elif isinstance(data, dict):
+            # Handle as dictionary (legacy format)
+            for lang_code, lang_name in data.items():
+                if isinstance(lang_name, str):
+                    output += f"  {lang_code}: {lang_name}\n"
 
     elif section_name == "interwikimap":
         output += "Interwiki Map:\n"

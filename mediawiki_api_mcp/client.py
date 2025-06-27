@@ -615,3 +615,97 @@ class MediaWikiClient:
         except Exception as e:
             logger.error(f"Move request failed: {e}")
             raise
+
+    async def delete_page(
+        self,
+        title: str | None = None,
+        pageid: int | None = None,
+        reason: str | None = None,
+        tags: list[str] | None = None,
+        deletetalk: bool = False,
+        watch: bool | None = None,
+        watchlist: str = "preferences",
+        watchlistexpiry: str | None = None,
+        unwatch: bool | None = None,
+        oldimage: str | None = None,
+        **kwargs: Any
+    ) -> dict[str, Any]:
+        """
+        Delete a MediaWiki page.
+
+        Args:
+            title: Title of the page to delete
+            pageid: Page ID of the page to delete
+            reason: Reason for the deletion
+            tags: Change tags to apply to the deletion log
+            deletetalk: Delete the talk page, if it exists
+            watch: Add the page to watchlist (deprecated, use watchlist)
+            watchlist: Watchlist behavior - "nochange", "preferences", "unwatch", "watch"
+            watchlistexpiry: Watchlist expiry timestamp
+            unwatch: Remove page from watchlist (deprecated, use watchlist)
+            oldimage: Name of old image to delete for files
+            **kwargs: Additional parameters
+
+        Returns:
+            API response dictionary
+        """
+        if not title and not pageid:
+            raise ValueError("Either title or pageid must be provided")
+
+        if not self.csrf_token:
+            await self.get_csrf_token()
+
+        if not self.csrf_token:
+            raise ValueError("Could not obtain CSRF token")
+
+        # Build delete parameters
+        delete_data = {
+            "action": "delete",
+            "format": "json",
+            "token": self.csrf_token
+        }
+
+        # Page identification
+        if title:
+            delete_data["title"] = title
+        if pageid:
+            delete_data["pageid"] = str(pageid)
+
+        # Optional parameters
+        if reason:
+            delete_data["reason"] = reason
+        if tags:
+            delete_data["tags"] = "|".join(tags)
+        if deletetalk:
+            delete_data["deletetalk"] = "1"
+        if oldimage:
+            delete_data["oldimage"] = oldimage
+
+        # Watchlist handling (handle deprecated parameters)
+        if watch is not None and watch:
+            delete_data["watchlist"] = "watch"
+        elif unwatch is not None and unwatch:
+            delete_data["watchlist"] = "unwatch"
+        elif watchlist != "preferences":
+            delete_data["watchlist"] = watchlist
+
+        if watchlistexpiry:
+            delete_data["watchlistexpiry"] = watchlistexpiry
+
+        # Add any additional parameters
+        delete_data.update(kwargs)
+
+        try:
+            response = await self._make_request("POST", data=delete_data)
+
+            if "delete" in response:
+                logger.info(f"Successfully deleted page: {title or pageid}")
+                delete_result: dict[str, Any] = response["delete"]
+                return delete_result
+            else:
+                logger.error(f"Delete failed: {response}")
+                return response
+
+        except Exception as e:
+            logger.error(f"Delete request failed: {e}")
+            raise

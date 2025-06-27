@@ -9,6 +9,7 @@ The server provides various MCP tools with the `wiki_` prefix:
 - **`wiki_page_edit`**: Edit or create MediaWiki pages with comprehensive editing options
 - **`wiki_page_get`**: Retrieve page information and content
 - **`wiki_page_move`**: Move pages with support for talk pages, subpages, and redirects
+- **`wiki_page_delete`**: Delete pages with support for talk pages, watchlist management, and logging
 - **`wiki_search`**: Search for pages using MediaWiki's search API with advanced filtering
 - **`wiki_opensearch`**: Search using OpenSearch protocol for quick suggestions and autocomplete
 
@@ -26,12 +27,14 @@ mediawiki_api_mcp/
 │   ├── wiki_page_edit.py   # Edit page tools
 │   ├── wiki_page_get.py    # Get page tools
 │   ├── wiki_page_move.py   # Move page tools
+│   ├── wiki_page_delete.py # Delete page tools
 │   └── wiki_search.py      # Search tools
 └── handlers/               # Tool handlers
     ├── __init__.py
     ├── wiki_page_edit.py   # Edit page handlers
     ├── wiki_page_get.py    # Get page handlers
     ├── wiki_page_move.py   # Move page handlers
+    ├── wiki_page_delete.py # Delete page handlers
     ├── wiki_search.py      # Search handlers
     └── wiki_opensearch.py  # OpenSearch handlers
 
@@ -41,6 +44,7 @@ tests/
 ├── test_wiki_page_edit.py  # Edit handler tests
 ├── test_wiki_page_get.py   # Get handler tests
 ├── test_wiki_page_move.py  # Move handler tests
+├── test_wiki_page_delete.py # Delete handler tests
 ├── test_wiki_search.py     # Search handler tests
 ├── test_wiki_opensearch.py # OpenSearch handler tests
 └── test_tools.py           # Tool definition tests

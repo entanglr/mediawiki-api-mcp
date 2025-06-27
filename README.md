@@ -16,6 +16,7 @@ The server provides various MCP tools with the `wiki_` prefix:
 |[**`wiki_page_delete`**](docs/tools/wiki_page_delete.md)|Delete pages with support for talk pages, watchlist management, and logging|
 |[**`wiki_search`**](docs/tools/wiki_search.md)|Search for pages using MediaWiki's search API with advanced filtering|
 |[**`wiki_opensearch`**](docs/tools/wiki_opensearch.md)|Search using OpenSearch protocol for quick suggestions and autocomplete|
+|[**`wiki_page_undelete`**](docs/tools/wiki_page_undelete.md)|Undelete (restore) deleted MediaWiki pages with comprehensive restoration options|
 
 ## Installation
 

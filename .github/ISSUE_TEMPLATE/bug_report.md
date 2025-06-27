@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: 'Bug report: '
-labels: 'scope:triage'
+labels: scope:triage
 assignees: ''
 
 ---

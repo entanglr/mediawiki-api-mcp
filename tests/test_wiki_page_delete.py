@@ -1,7 +1,8 @@
 """Tests for wiki page delete functionality."""
 
+from unittest.mock import AsyncMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock
 
 from mediawiki_api_mcp.client import MediaWikiClient
 from mediawiki_api_mcp.handlers.wiki_page_delete import handle_delete_page

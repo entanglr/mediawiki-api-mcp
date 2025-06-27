@@ -376,4 +376,4 @@ All errors are returned as MCP `TextContent` responses for LLM visibility.
 
 ## License
 
-[Your License Here]
+[MIT License](https://github.com/entanglr/mediawiki-api-mcp/blob/main/LICENSE)

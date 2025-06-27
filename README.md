@@ -73,6 +73,13 @@ python -m mediawiki_api_mcp.server
 
 ### Configuration with Claude Desktop
 
+#### Configuration File Location
+
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+#### Template Configuration
+
 Add to your Claude Desktop configuration file:
 
 ```json
@@ -80,17 +87,47 @@ Add to your Claude Desktop configuration file:
   "mcpServers": {
     "mediawiki-api": {
       "command": "uv",
-      "args": ["run", "mediawiki-api-mcp"],
+      "args": [
+        "--directory",
+        "/absolute/path/to/mediawiki-api-mcp",
+        "run",
+        "mediawiki-api-mcp"
+      ],
       "env": {
-        "MEDIAWIKI_API_URL": "https://your-wiki.com/api.php",
-        "MEDIAWIKI_API_BOT_USERNAME": "your_bot_username",
-        "MEDIAWIKI_API_BOT_PASSWORD": "your_bot_password",
-        "MEDIAWIKI_API_BOT_USER_AGENT": "MediaWiki-MCP-Bot/1.0"
+        "MEDIAWIKI_API_URL": "http://mediawiki.test/api.php",
+        "MEDIAWIKI_API_BOT_USERNAME": "YourUserName@YourBotName",
+        "MEDIAWIKI_API_BOT_PASSWORD": "YourBotPassword",
+        "MEDIAWIKI_API_BOT_USER_AGENT": "MediaWiki-MCP-Bot/1.0 (your.email@mediawiki.test)"
       }
     }
   }
 }
 ```
+
+#### Configuration Instructions
+
+1. Replace `/absolute/path/to/mediawiki-api-mcp` with the actual absolute path to this project directory
+2. Update `MEDIAWIKI_API_URL` with your MediaWiki installation's API endpoint
+3. Set `MEDIAWIKI_API_BOT_USERNAME` to your bot username (typically in format `YourUserName@YourBotName`)
+4. Set `MEDIAWIKI_API_BOT_PASSWORD` to the generated bot password from your wiki's `Special:BotPasswords` page
+5. Customize `MEDIAWIKI_API_BOT_USER_AGENT` with appropriate contact information (optional)
+
+##### Bot Password Setup
+
+Create bot credentials at e.g.: `http://mediawiki.test/index.php/Special:BotPasswords`
+
+Required permissions:
+
+- **Basic rights**: Read pages
+- **High-volume editing**: Edit existing pages, Create, edit, and move pages
+- Additional permissions as needed for your specific use case
+
+##### Security Notes
+
+- Keep your bot credentials secure and never commit them to version control
+- Use the principle of least privilege when setting bot permissions
+- Monitor bot activity through your MediaWiki's logging interface
+- Consider using IP restrictions for additional security
 
 ## Tools
 

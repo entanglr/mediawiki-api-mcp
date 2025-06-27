@@ -518,3 +518,100 @@ class MediaWikiClient:
         except Exception as e:
             logger.error(f"OpenSearch request failed: {e}")
             raise
+
+    async def move_page(
+        self,
+        from_title: str | None = None,
+        fromid: int | None = None,
+        to: str | None = None,
+        reason: str | None = None,
+        movetalk: bool = False,
+        movesubpages: bool = False,
+        noredirect: bool = False,
+        watchlist: str = "preferences",
+        watchlistexpiry: str | None = None,
+        ignorewarnings: bool = False,
+        tags: list[str] | None = None,
+        **kwargs: Any
+    ) -> dict[str, Any]:
+        """
+        Move a MediaWiki page.
+
+        Args:
+            from_title: Title of the page to rename
+            fromid: Page ID of the page to rename
+            to: Title to rename the page to (required)
+            reason: Reason for the rename
+            movetalk: Rename the talk page, if it exists
+            movesubpages: Rename subpages, if applicable
+            noredirect: Don't create a redirect
+            watchlist: Watchlist behavior - "nochange", "preferences", "unwatch", "watch"
+            watchlistexpiry: Watchlist expiry timestamp
+            ignorewarnings: Ignore any warnings
+            tags: Change tags to apply to the move log
+            **kwargs: Additional parameters
+
+        Returns:
+            API response dictionary
+        """
+        if not from_title and not fromid:
+            raise ValueError("Either from_title or fromid must be provided")
+
+        if not to:
+            raise ValueError("to parameter is required")
+
+        if not self.csrf_token:
+            await self.get_csrf_token()
+
+        if not self.csrf_token:
+            raise ValueError("Could not obtain CSRF token")
+
+        # Build move parameters
+        move_data = {
+            "action": "move",
+            "format": "json",
+            "token": self.csrf_token,
+            "to": to
+        }
+
+        # Page identification
+        if from_title:
+            move_data["from"] = from_title
+        if fromid:
+            move_data["fromid"] = str(fromid)
+
+        # Optional parameters
+        if reason:
+            move_data["reason"] = reason
+        if movetalk:
+            move_data["movetalk"] = "1"
+        if movesubpages:
+            move_data["movesubpages"] = "1"
+        if noredirect:
+            move_data["noredirect"] = "1"
+        if watchlist != "preferences":
+            move_data["watchlist"] = watchlist
+        if watchlistexpiry:
+            move_data["watchlistexpiry"] = watchlistexpiry
+        if ignorewarnings:
+            move_data["ignorewarnings"] = "1"
+        if tags:
+            move_data["tags"] = "|".join(tags)
+
+        # Add any additional parameters
+        move_data.update(kwargs)
+
+        try:
+            response = await self._make_request("POST", data=move_data)
+
+            if "move" in response:
+                logger.info(f"Successfully moved page: {from_title or fromid} -> {to}")
+                move_result: dict[str, Any] = response["move"]
+                return move_result
+            else:
+                logger.error(f"Move failed: {response}")
+                return response
+
+        except Exception as e:
+            logger.error(f"Move request failed: {e}")
+            raise

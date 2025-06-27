@@ -1,7 +1,8 @@
 """Test cases for wiki_opensearch tool."""
 
+from unittest.mock import AsyncMock, Mock
+
 import pytest
-from unittest.mock import Mock, AsyncMock
 
 from mediawiki_api_mcp.handlers.wiki_opensearch import handle_opensearch
 

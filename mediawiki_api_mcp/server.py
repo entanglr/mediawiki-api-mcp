@@ -197,6 +197,52 @@ async def wiki_search(
         return f"Error: {str(e)}"
 
 
+@mcp.tool()
+async def wiki_opensearch(
+    search: str,
+    namespace: list[int] | None = None,
+    limit: int = 10,
+    profile: str = "engine_autoselect",
+    redirects: str = "",
+    format: str = "json",
+    warningsaserror: bool = False,
+) -> str:
+    """Search the wiki using the OpenSearch protocol.
+
+    Args:
+        search: Search string (required)
+        namespace: Namespaces to search (default: [0] for main namespace)
+        limit: Maximum number of results (1-500, default: 10)
+        profile: Search profile (default: "engine_autoselect")
+        redirects: How to handle redirects - "return" or "resolve"
+        format: Output format (default: "json")
+        warningsaserror: Treat warnings as errors (default: False)
+    """
+    try:
+        config = get_config()
+        async with MediaWikiClient(config) as client:
+            # Import here to avoid circular imports
+            from .handlers import handle_opensearch
+
+            # Convert FastMCP parameters to handler arguments
+            arguments = {
+                "search": search,
+                "namespace": namespace,
+                "limit": limit,
+                "profile": profile,
+                "redirects": redirects if redirects else None,
+                "format": format,
+                "warningsaserror": warningsaserror,
+            }
+
+            result = await handle_opensearch(client, arguments)
+            # Return the formatted text from the handler
+            return result[0].text if result else "No results"
+    except Exception as e:
+        logger.error(f"Wiki opensearch failed: {e}")
+        return f"Error: {str(e)}"
+
+
 def run_server() -> None:
     """Synchronous entry point for the MCP server."""
     mcp.run(transport='stdio')

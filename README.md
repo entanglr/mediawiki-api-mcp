@@ -110,24 +110,24 @@ Required permissions:
 
 ## Development
 
-## Architecture
+### Architecture
 
-### Client Layer (`client.py`)
+#### Client Layer (`client.py`)
 - Handles MediaWiki API authentication and requests
 - Manages CSRF tokens and session state
 - Provides typed methods for API operations
 
-### Tools Layer (`tools/`)
+#### Tools Layer (`tools/`)
 - Defines MCP tool schemas using JSON Schema
 - Separated by functional area (edit, search)
 - Ensures all tools have `wiki_` prefix
 
-### Handlers Layer (`handlers/`)
+#### Handlers Layer (`handlers/`)
 - Implements actual tool logic
 - Handles argument validation and error handling
 - Returns properly formatted MCP responses
 
-### Server Layer (`server.py`)
+#### Server Layer (`server.py`)
 - Main MCP server orchestration
 - Routes tool calls to appropriate handlers
 - Manages configuration and client lifecycle

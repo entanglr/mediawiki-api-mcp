@@ -18,33 +18,34 @@ The project is organized into modular components for maintainability:
 ```
 mediawiki_api_mcp/
 ├── __init__.py
-├── server.py             # Main MCP server implementation
-├── client.py             # MediaWiki API client
-├── tools/                # Tool definitions
+├── server.py               # Main MCP server implementation
+├── client.py               # MediaWiki API client
+├── tools/                  # Tool definitions
 │   ├── __init__.py
-│   ├── wiki_page_edit.py # Edit page tools
-│   ├── wiki_page_get.py  # Get page tools
-│   └── wiki_search.py    # Search tools
-└── handlers/             # Tool handlers
+│   ├── wiki_page_edit.py   # Edit page tools
+│   ├── wiki_page_get.py    # Get page tools
+│   └── wiki_search.py      # Search tools
+└── handlers/               # Tool handlers
     ├── __init__.py
-    ├── wiki_page_edit.py # Edit page handlers
-    ├── wiki_page_get.py  # Get page handlers
-    ├── wiki_search.py    # Search handlers
-    └── wiki_opensearch.py # OpenSearch handlers
+    ├── wiki_page_edit.py   # Edit page handlers
+    ├── wiki_page_get.py    # Get page handlers
+    ├── wiki_search.py      # Search handlers
+    └── wiki_opensearch.py  # OpenSearch handlers
 
 tests/
 ├── __init__.py
-├── test_server.py         # Integration tests
-├── test_wiki_page_edit.py # Edit handler tests
-├── test_wiki_page_get.py  # Get handler tests
-├── test_wiki_search.py    # Search handler tests
+├── test_server.py          # Integration tests
+├── test_wiki_page_edit.py  # Edit handler tests
+├── test_wiki_page_get.py   # Get handler tests
+├── test_wiki_search.py     # Search handler tests
 ├── test_wiki_opensearch.py # OpenSearch handler tests
-└── test_tools.py          # Tool definition tests
+└── test_tools.py           # Tool definition tests
 ```
 
 ## Installation
 
 1. Clone the repository
+
 2. Install dependencies using UV:
 
 ```bash
@@ -54,10 +55,10 @@ uv install
 3. Set up environment variables:
 
 ```bash
-export MEDIAWIKI_API_URL="https://your-wiki.com/api.php"
-export MEDIAWIKI_API_BOT_USERNAME="your_bot_username"
-export MEDIAWIKI_API_BOT_PASSWORD="your_bot_password"
-export MEDIAWIKI_API_BOT_USER_AGENT="MediaWiki-MCP-Bot/1.0"  # Optional
+export MEDIAWIKI_API_URL="http://mediawiki.test/api.php"
+export MEDIAWIKI_API_BOT_USERNAME="YourUserName@YourBotName"
+export MEDIAWIKI_API_BOT_PASSWORD="YourBotPassword"
+export MEDIAWIKI_API_BOT_USER_AGENT="MediaWiki-MCP-Bot/1.0 (your.email@mediawiki.test)"  # Optional
 ```
 
 ## Usage

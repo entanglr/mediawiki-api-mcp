@@ -14,9 +14,9 @@ The server provides various MCP tools with the `wiki_` prefix:
 |[**`wiki_page_get`**](docs/tools/wiki_page_get.md)|Retrieve page information and content|
 |[**`wiki_page_move`**](docs/tools/wiki_page_move.md)|Move pages with support for talk pages, subpages, and redirects|
 |[**`wiki_page_delete`**](docs/tools/wiki_page_delete.md)|Delete pages with support for talk pages, watchlist management, and logging|
+|[**`wiki_page_undelete`**](docs/tools/wiki_page_undelete.md)|Undelete (restore) deleted MediaWiki pages with comprehensive restoration options|
 |[**`wiki_search`**](docs/tools/wiki_search.md)|Search for pages using MediaWiki's search API with advanced filtering|
 |[**`wiki_opensearch`**](docs/tools/wiki_opensearch.md)|Search using OpenSearch protocol for quick suggestions and autocomplete|
-|[**`wiki_page_undelete`**](docs/tools/wiki_page_undelete.md)|Undelete (restore) deleted MediaWiki pages with comprehensive restoration options|
 
 ## Installation
 
@@ -111,7 +111,21 @@ Required permissions:
 
 ## Development
 
+### Technology Stack
+
+- **MCP SDK**: mcp >= 1.2.0 (using FastMCP pattern)
+- **HTTP Client**: httpx >= 0.27.0 for MediaWiki API calls
+- **Data Validation**: pydantic >= 2.0.0 for configuration models
+- **Environment**: python-dotenv >= 1.0.0 for configuration
+- **Testing**: pytest with pytest-asyncio for async testing
+- **Code Quality**: ruff for linting, mypy for type checking
+
 ### Architecture
+
+- FastMCP server with `@mcp.tool()` decorators
+- Separation of concerns: server → handler → client → MediaWiki API
+- AsyncIO throughout for non-blocking operations
+- Environment-based configuration for MediaWiki credentials
 
 #### Client Layer (`client.py`)
 - Handles MediaWiki API authentication and requests
@@ -138,36 +152,24 @@ Required permissions:
 The project is organized into modular components for maintainability:
 
 ```
-mediawiki_api_mcp/
-├── __init__.py
-├── server.py                # Main MCP server implementation
-├── client.py                # MediaWiki API client
-├── tools/                   # Tool definitions
+mediawiki-api-mcp/
+├── mediawiki_api_mcp/
 │   ├── __init__.py
-│   ├── wiki_page_edit.py    # Edit page tools
-│   ├── wiki_page_get.py     # Get page tools
-│   ├── wiki_page_move.py    # Move page tools
-│   ├── wiki_page_delete.py  # Delete page tools
-│   └── wiki_search.py       # Search tools
-└── handlers/                # Tool handlers
-    ├── __init__.py
-    ├── wiki_page_edit.py    # Edit page handlers
-    ├── wiki_page_get.py     # Get page handlers
-    ├── wiki_page_move.py    # Move page handlers
-    ├── wiki_page_delete.py  # Delete page handlers
-    ├── wiki_search.py       # Search handlers
-    └── wiki_opensearch.py   # OpenSearch handlers
-
-tests/
-├── __init__.py
-├── test_server.py           # Integration tests
-├── test_wiki_page_edit.py   # Edit handler tests
-├── test_wiki_page_get.py    # Get handler tests
-├── test_wiki_page_move.py   # Move handler tests
-├── test_wiki_page_delete.py # Delete handler tests
-├── test_wiki_search.py      # Search handler tests
-├── test_wiki_opensearch.py  # OpenSearch handler tests
-└── test_tools.py            # Tool definition tests
+│   ├── server.py             # FastMCP server with tool definitions
+│   ├── client.py             # MediaWiki API client
+│   ├── handlers/             # Business logic handlers
+│   │    ├── __init__.py      # Handler exports
+│   │    └── wiki_*.py        # Individual tool handlers
+│   └── tools/                # Tool definitions
+│       ├── __init__.py       # Tool exports
+│       └── wiki_*.py         # Individual tool definitions
+├── tests/                    # Test suite
+│   └── test_*.py             # Test files matching handlers
+├── docs/                     # Documentation
+│   └── tools/                # Tool-specific documentation
+│       └── wiki_*.md         # Individual tool docs
+├── pyproject.toml            # Project configuration
+└── uv.lock                   # Dependency lock file
 ```
 
 ### Running Tests

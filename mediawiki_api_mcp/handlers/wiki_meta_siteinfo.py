@@ -99,7 +99,7 @@ def format_siteinfo_section(section_name: str, data: Any) -> str:
         for field, label in key_fields:
             if field in data:
                 value = data[field]
-                if isinstance(value, (list, dict)):
+                if isinstance(value, list | dict):
                     value = json.dumps(value, indent=2)
                 output += f"  {label}: {value}\n"
 
@@ -239,7 +239,7 @@ def format_siteinfo_section(section_name: str, data: Any) -> str:
 
         if isinstance(data, dict):
             for key, value in data.items():
-                if isinstance(value, (list, dict)):
+                if isinstance(value, list | dict):
                     value = json.dumps(value, indent=2)
                 output += f"  {key}: {value}\n"
         elif isinstance(data, list):

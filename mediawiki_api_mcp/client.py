@@ -709,3 +709,83 @@ class MediaWikiClient:
         except Exception as e:
             logger.error(f"Delete request failed: {e}")
             raise
+
+    async def undelete_page(
+        self,
+        title: str,
+        reason: str | None = None,
+        tags: list[str] | None = None,
+        timestamps: list[str] | None = None,
+        fileids: list[int] | None = None,
+        undeletetalk: bool = False,
+        watchlist: str = "preferences",
+        watchlistexpiry: str | None = None,
+        **kwargs: Any
+    ) -> dict[str, Any]:
+        """
+        Undelete (restore) the revisions of a deleted MediaWiki page.
+
+        Args:
+            title: Title of the page to undelete (required)
+            reason: Reason for restoring
+            tags: Change tags to apply to the entry in the deletion log
+            timestamps: Timestamps of the revisions to undelete
+            fileids: IDs of the file revisions to restore
+            undeletetalk: Undelete all revisions of the associated talk page, if any
+            watchlist: Watchlist behavior - "nochange", "preferences", "unwatch", "watch"
+            watchlistexpiry: Watchlist expiry timestamp
+            **kwargs: Additional parameters
+
+        Returns:
+            API response dictionary
+        """
+        if not title:
+            raise ValueError("Title must be provided")
+
+        if not self.csrf_token:
+            await self.get_csrf_token()
+
+        if not self.csrf_token:
+            raise ValueError("Could not obtain CSRF token")
+
+        # Build undelete parameters
+        undelete_data = {
+            "action": "undelete",
+            "format": "json",
+            "title": title,
+            "token": self.csrf_token
+        }
+
+        # Optional parameters
+        if reason:
+            undelete_data["reason"] = reason
+        if tags:
+            undelete_data["tags"] = "|".join(tags)
+        if timestamps:
+            undelete_data["timestamps"] = "|".join(timestamps)
+        if fileids:
+            undelete_data["fileids"] = "|".join(str(fid) for fid in fileids)
+        if undeletetalk:
+            undelete_data["undeletetalk"] = "1"
+        if watchlist != "preferences":
+            undelete_data["watchlist"] = watchlist
+        if watchlistexpiry:
+            undelete_data["watchlistexpiry"] = watchlistexpiry
+
+        # Add any additional parameters
+        undelete_data.update(kwargs)
+
+        try:
+            response = await self._make_request("POST", data=undelete_data)
+
+            if "undelete" in response:
+                logger.info(f"Successfully undeleted page: {title}")
+                undelete_result: dict[str, Any] = response["undelete"]
+                return undelete_result
+            else:
+                logger.error(f"Undelete failed: {response}")
+                return response
+
+        except Exception as e:
+            logger.error(f"Undelete request failed: {e}")
+            raise

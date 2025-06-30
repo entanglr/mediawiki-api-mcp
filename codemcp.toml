@@ -1,3 +1,4 @@
 [commands]
 mv = ["mv"]
+glob = ["glob"]
 test = ["uv", "run", "pytest"]

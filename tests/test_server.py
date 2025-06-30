@@ -256,7 +256,7 @@ class TestSearchFunctionality:
     @pytest.mark.asyncio
     async def test_search_client_method(self, mock_config):
         """Test the MediaWiki client search_pages method."""
-        with patch('mediawiki_api_mcp.client.MediaWikiClient._make_request') as mock_request:
+        with patch('mediawiki_api_mcp.client_modules.client_auth.MediaWikiAuthClient._make_request') as mock_request:
             mock_request.return_value = {
                 "query": {
                     "search": [{"title": "Test", "pageid": 123}]
@@ -265,7 +265,7 @@ class TestSearchFunctionality:
 
             client = MediaWikiClient(mock_config)
 
-            result = await client.search_pages("test query")
+            result = await client.search_pages(search_query="test query")
 
             # Verify the request was made with correct parameters
             expected_params = {

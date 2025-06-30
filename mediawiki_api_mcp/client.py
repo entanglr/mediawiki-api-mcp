@@ -518,3 +518,350 @@ class MediaWikiClient:
         except Exception as e:
             logger.error(f"OpenSearch request failed: {e}")
             raise
+
+    async def move_page(
+        self,
+        from_title: str | None = None,
+        fromid: int | None = None,
+        to: str | None = None,
+        reason: str | None = None,
+        movetalk: bool = False,
+        movesubpages: bool = False,
+        noredirect: bool = False,
+        watchlist: str = "preferences",
+        watchlistexpiry: str | None = None,
+        ignorewarnings: bool = False,
+        tags: list[str] | None = None,
+        **kwargs: Any
+    ) -> dict[str, Any]:
+        """
+        Move a MediaWiki page.
+
+        Args:
+            from_title: Title of the page to rename
+            fromid: Page ID of the page to rename
+            to: Title to rename the page to (required)
+            reason: Reason for the rename
+            movetalk: Rename the talk page, if it exists
+            movesubpages: Rename subpages, if applicable
+            noredirect: Don't create a redirect
+            watchlist: Watchlist behavior - "nochange", "preferences", "unwatch", "watch"
+            watchlistexpiry: Watchlist expiry timestamp
+            ignorewarnings: Ignore any warnings
+            tags: Change tags to apply to the move log
+            **kwargs: Additional parameters
+
+        Returns:
+            API response dictionary
+        """
+        if not from_title and not fromid:
+            raise ValueError("Either from_title or fromid must be provided")
+
+        if not to:
+            raise ValueError("to parameter is required")
+
+        if not self.csrf_token:
+            await self.get_csrf_token()
+
+        if not self.csrf_token:
+            raise ValueError("Could not obtain CSRF token")
+
+        # Build move parameters
+        move_data = {
+            "action": "move",
+            "format": "json",
+            "token": self.csrf_token,
+            "to": to
+        }
+
+        # Page identification
+        if from_title:
+            move_data["from"] = from_title
+        if fromid:
+            move_data["fromid"] = str(fromid)
+
+        # Optional parameters
+        if reason:
+            move_data["reason"] = reason
+        if movetalk:
+            move_data["movetalk"] = "1"
+        if movesubpages:
+            move_data["movesubpages"] = "1"
+        if noredirect:
+            move_data["noredirect"] = "1"
+        if watchlist != "preferences":
+            move_data["watchlist"] = watchlist
+        if watchlistexpiry:
+            move_data["watchlistexpiry"] = watchlistexpiry
+        if ignorewarnings:
+            move_data["ignorewarnings"] = "1"
+        if tags:
+            move_data["tags"] = "|".join(tags)
+
+        # Add any additional parameters
+        move_data.update(kwargs)
+
+        try:
+            response = await self._make_request("POST", data=move_data)
+
+            if "move" in response:
+                logger.info(f"Successfully moved page: {from_title or fromid} -> {to}")
+                move_result: dict[str, Any] = response["move"]
+                return move_result
+            else:
+                logger.error(f"Move failed: {response}")
+                return response
+
+        except Exception as e:
+            logger.error(f"Move request failed: {e}")
+            raise
+
+    async def delete_page(
+        self,
+        title: str | None = None,
+        pageid: int | None = None,
+        reason: str | None = None,
+        tags: list[str] | None = None,
+        deletetalk: bool = False,
+        watch: bool | None = None,
+        watchlist: str = "preferences",
+        watchlistexpiry: str | None = None,
+        unwatch: bool | None = None,
+        oldimage: str | None = None,
+        **kwargs: Any
+    ) -> dict[str, Any]:
+        """
+        Delete a MediaWiki page.
+
+        Args:
+            title: Title of the page to delete
+            pageid: Page ID of the page to delete
+            reason: Reason for the deletion
+            tags: Change tags to apply to the deletion log
+            deletetalk: Delete the talk page, if it exists
+            watch: Add the page to watchlist (deprecated, use watchlist)
+            watchlist: Watchlist behavior - "nochange", "preferences", "unwatch", "watch"
+            watchlistexpiry: Watchlist expiry timestamp
+            unwatch: Remove page from watchlist (deprecated, use watchlist)
+            oldimage: Name of old image to delete for files
+            **kwargs: Additional parameters
+
+        Returns:
+            API response dictionary
+        """
+        if not title and not pageid:
+            raise ValueError("Either title or pageid must be provided")
+
+        if not self.csrf_token:
+            await self.get_csrf_token()
+
+        if not self.csrf_token:
+            raise ValueError("Could not obtain CSRF token")
+
+        # Build delete parameters
+        delete_data = {
+            "action": "delete",
+            "format": "json",
+            "token": self.csrf_token
+        }
+
+        # Page identification
+        if title:
+            delete_data["title"] = title
+        if pageid:
+            delete_data["pageid"] = str(pageid)
+
+        # Optional parameters
+        if reason:
+            delete_data["reason"] = reason
+        if tags:
+            delete_data["tags"] = "|".join(tags)
+        if deletetalk:
+            delete_data["deletetalk"] = "1"
+        if oldimage:
+            delete_data["oldimage"] = oldimage
+
+        # Watchlist handling (handle deprecated parameters)
+        if watch is not None and watch:
+            delete_data["watchlist"] = "watch"
+        elif unwatch is not None and unwatch:
+            delete_data["watchlist"] = "unwatch"
+        elif watchlist != "preferences":
+            delete_data["watchlist"] = watchlist
+
+        if watchlistexpiry:
+            delete_data["watchlistexpiry"] = watchlistexpiry
+
+        # Add any additional parameters
+        delete_data.update(kwargs)
+
+        try:
+            response = await self._make_request("POST", data=delete_data)
+
+            if "delete" in response:
+                logger.info(f"Successfully deleted page: {title or pageid}")
+                delete_result: dict[str, Any] = response["delete"]
+                return delete_result
+            else:
+                logger.error(f"Delete failed: {response}")
+                return response
+
+        except Exception as e:
+            logger.error(f"Delete request failed: {e}")
+            raise
+
+    async def undelete_page(
+        self,
+        title: str,
+        reason: str | None = None,
+        tags: list[str] | None = None,
+        timestamps: list[str] | None = None,
+        fileids: list[int] | None = None,
+        undeletetalk: bool = False,
+        watchlist: str = "preferences",
+        watchlistexpiry: str | None = None,
+        **kwargs: Any
+    ) -> dict[str, Any]:
+        """
+        Undelete (restore) the revisions of a deleted MediaWiki page.
+
+        Args:
+            title: Title of the page to undelete (required)
+            reason: Reason for restoring
+            tags: Change tags to apply to the entry in the deletion log
+            timestamps: Timestamps of the revisions to undelete
+            fileids: IDs of the file revisions to restore
+            undeletetalk: Undelete all revisions of the associated talk page, if any
+            watchlist: Watchlist behavior - "nochange", "preferences", "unwatch", "watch"
+            watchlistexpiry: Watchlist expiry timestamp
+            **kwargs: Additional parameters
+
+        Returns:
+            API response dictionary
+        """
+        if not title:
+            raise ValueError("Title must be provided")
+
+        if not self.csrf_token:
+            await self.get_csrf_token()
+
+        if not self.csrf_token:
+            raise ValueError("Could not obtain CSRF token")
+
+        # Build undelete parameters
+        undelete_data = {
+            "action": "undelete",
+            "format": "json",
+            "title": title,
+            "token": self.csrf_token
+        }
+
+        # Optional parameters
+        if reason:
+            undelete_data["reason"] = reason
+        if tags:
+            undelete_data["tags"] = "|".join(tags)
+        if timestamps:
+            undelete_data["timestamps"] = "|".join(timestamps)
+        if fileids:
+            undelete_data["fileids"] = "|".join(str(fid) for fid in fileids)
+        if undeletetalk:
+            undelete_data["undeletetalk"] = "1"
+        if watchlist != "preferences":
+            undelete_data["watchlist"] = watchlist
+        if watchlistexpiry:
+            undelete_data["watchlistexpiry"] = watchlistexpiry
+
+        # Add any additional parameters
+        undelete_data.update(kwargs)
+
+        try:
+            response = await self._make_request("POST", data=undelete_data)
+
+            if "undelete" in response:
+                logger.info(f"Successfully undeleted page: {title}")
+                undelete_result: dict[str, Any] = response["undelete"]
+                return undelete_result
+            else:
+                logger.error(f"Undelete failed: {response}")
+                return response
+
+        except Exception as e:
+            logger.error(f"Undelete request failed: {e}")
+            raise
+
+    async def get_siteinfo(
+        self,
+        siprop: list[str] | None = None,
+        sifilteriw: str | None = None,
+        sishowalldb: bool = False,
+        sinumberingroup: bool = False,
+        siinlanguagecode: str | None = None,
+        **kwargs: Any
+    ) -> dict[str, Any]:
+        """
+        Get overall site information from MediaWiki.
+
+        Args:
+            siprop: Which information to get (default: ["general"])
+            sifilteriw: Return only local or only nonlocal entries of interwiki map ("local" or "!local")
+            sishowalldb: List all database servers, not just the one lagging the most
+            sinumberingroup: Lists the number of users in user groups
+            siinlanguagecode: Language code for localised language names and skin names
+            **kwargs: Additional parameters
+
+        Returns:
+            API response dictionary containing site information
+        """
+        # Build siteinfo parameters
+        params = {
+            "action": "query",
+            "meta": "siteinfo",
+            "format": "json"
+        }
+
+        # Set which information to get (default to general)
+        if siprop is None:
+            siprop = ["general"]
+
+        # Validate siprop values
+        valid_props = [
+            "general", "namespaces", "namespacealiases", "specialpagealiases",
+            "magicwords", "interwikimap", "dbrepllag", "statistics", "usergroups",
+            "autocreatetempuser", "clientlibraries", "libraries", "extensions",
+            "fileextensions", "rightsinfo", "restrictions", "languages",
+            "languagevariants", "skins", "extensiontags", "functionhooks",
+            "showhooks", "variables", "protocols", "defaultoptions",
+            "uploaddialog", "autopromote", "autopromoteonce", "copyuploaddomains"
+        ]
+
+        filtered_props = [p for p in siprop if p in valid_props]
+        if filtered_props:
+            params["siprop"] = "|".join(filtered_props)
+
+        # Set interwiki filter
+        if sifilteriw and sifilteriw in ["local", "!local"]:
+            params["sifilteriw"] = sifilteriw
+
+        # Set boolean parameters
+        if sishowalldb:
+            params["sishowalldb"] = "1"
+
+        if sinumberingroup:
+            params["sinumberingroup"] = "1"
+
+        # Set language code
+        if siinlanguagecode:
+            params["siinlanguagecode"] = siinlanguagecode
+
+        # Add any additional parameters
+        params.update(kwargs)
+
+        try:
+            response = await self._make_request("GET", params=params)
+            logger.info("Siteinfo query completed successfully")
+            return response
+
+        except Exception as e:
+            logger.error(f"Siteinfo request failed: {e}")
+            raise

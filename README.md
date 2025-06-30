@@ -143,7 +143,7 @@ Required permissions:
 - Handles argument validation and error handling
 - Returns properly formatted MCP responses
 
-#### Server Layer (`server.py`)
+#### Server Layer (`server.py` and `server_tools/`)
 - Main MCP server orchestration
 - Routes tool calls to appropriate handlers
 - Manages configuration and client lifecycle
@@ -161,8 +161,11 @@ mediawiki-api-mcp/
 │   ├── handlers/             # Business logic handlers
 │   │    ├── __init__.py      # Handler exports
 │   │    └── wiki_*.py        # Individual tool handlers
-│   └── tools/                # Tool definitions
-│       ├── __init__.py       # Tool exports
+│   ├── tools/                # Tool schemas
+│   │   ├── __init__.py       # Tool schema exports
+│   │   └── wiki_*.py         # Individual tool schemas
+│   └── server_tools/         # Tool definitions
+│       ├── __init__.py       # Tool definition exports
 │       └── wiki_*.py         # Individual tool definitions
 ├── tests/                    # Test suite
 │   └── test_*.py             # Test files matching handlers

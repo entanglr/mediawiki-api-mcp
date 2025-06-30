@@ -128,7 +128,7 @@ Required permissions:
 - AsyncIO throughout for non-blocking operations
 - Environment-based configuration for MediaWiki credentials
 
-#### Client Layer (`client.py`)
+#### Client Layer (`client.py` and `client_modules/`)
 - Handles MediaWiki API authentication and requests
 - Manages CSRF tokens and session state
 - Provides typed methods for API operations
@@ -158,6 +158,9 @@ mediawiki-api-mcp/
 │   ├── __init__.py
 │   ├── server.py             # FastMCP server with tool definitions
 │   ├── client.py             # MediaWiki API client
+│   ├── client_modules/       # Client modules for API operations
+│   │    ├── __init__.py      # Client module exports
+│   │    └── client_*.py        # Individual client modules
 │   ├── handlers/             # Business logic handlers
 │   │    ├── __init__.py      # Handler exports
 │   │    └── wiki_*.py        # Individual tool handlers

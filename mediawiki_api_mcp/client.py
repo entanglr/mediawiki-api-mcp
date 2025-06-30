@@ -3,24 +3,15 @@
 import logging
 from typing import Any
 
-from pydantic import BaseModel
-
 from .client_modules import (
     MediaWikiAuthClient,
     MediaWikiMetaClient,
     MediaWikiPageClient,
     MediaWikiSearchClient,
 )
+from .config import MediaWikiConfig
 
 logger = logging.getLogger(__name__)
-
-
-class MediaWikiConfig(BaseModel):
-    """Configuration for MediaWiki API connection."""
-    api_url: str
-    username: str
-    password: str
-    user_agent: str = "MediaWiki-MCP-Bot/1.0"
 
 
 class MediaWikiClient:

@@ -5,7 +5,7 @@ import os
 
 from mcp.server.fastmcp import FastMCP
 
-from .client import MediaWikiConfig
+from .config import MediaWikiConfig
 from .server_tools.wiki_meta_siteinfo import register_wiki_meta_siteinfo_tool
 from .server_tools.wiki_opensearch import register_wiki_opensearch_tool
 from .server_tools.wiki_page_delete import register_wiki_page_delete_tool

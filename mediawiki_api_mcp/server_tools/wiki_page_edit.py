@@ -5,7 +5,8 @@ from collections.abc import Callable
 
 from mcp.server.fastmcp import FastMCP
 
-from ..client import MediaWikiClient, MediaWikiConfig
+from ..client import MediaWikiClient
+from ..config import MediaWikiConfig
 
 logger = logging.getLogger(__name__)
 

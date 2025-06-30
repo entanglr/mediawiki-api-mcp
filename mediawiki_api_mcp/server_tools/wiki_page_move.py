@@ -1,9 +1,10 @@
 """Wiki page move tool for MediaWiki API MCP integration."""
 
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 from mcp.server.fastmcp import FastMCP
+
 from ..client import MediaWikiClient, MediaWikiConfig
 
 logger = logging.getLogger(__name__)

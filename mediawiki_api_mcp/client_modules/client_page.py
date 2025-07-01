@@ -235,6 +235,192 @@ class MediaWikiPageClient:
         response = await self.auth_client._make_request("GET", params=params)
         return response
 
+    async def parse_page(
+        self,
+        title: str | None = None,
+        pageid: int | None = None,
+        oldid: int | None = None,
+        text: str | None = None,
+        revid: int | None = None,
+        summary: str | None = None,
+        page: str | None = None,
+        redirects: bool = False,
+        prop: list[str] | None = None,
+        wrapoutputclass: str | None = None,
+        usearticle: bool = False,
+        parsoid: bool = False,
+        pst: bool = False,
+        onlypst: bool = False,
+        section: str | None = None,
+        sectiontitle: str | None = None,
+        disablelimitreport: bool = False,
+        disableeditsection: bool = False,
+        disablestylededuplication: bool = False,
+        showstrategykeys: bool = False,
+        preview: bool = False,
+        sectionpreview: bool = False,
+        disabletoc: bool = False,
+        useskin: str | None = None,
+        contentformat: str | None = None,
+        contentmodel: str | None = None,
+        mobileformat: bool = False,
+        templatesandboxprefix: list[str] | None = None,
+        templatesandboxtitle: str | None = None,
+        templatesandboxtext: str | None = None,
+        templatesandboxcontentmodel: str | None = None,
+        templatesandboxcontentformat: str | None = None,
+        **kwargs: Any
+    ) -> dict[str, Any]:
+        """
+        Parse content and return parser output using the MediaWiki Parse API.
+
+        This is a comprehensive implementation of the Parse API that supports
+        all documented parameters for parsing wikitext content.
+
+        Args:
+            title: Title of page the text belongs to
+            pageid: Parse the content of this page (overrides page)
+            oldid: Parse the content of this revision (overrides page and pageid)
+            text: Text to parse (use title or contentmodel to control content model)
+            revid: Revision ID for {{REVISIONID}} and similar variables
+            summary: Summary to parse
+            page: Parse the content of this page (cannot be used with text and title)
+            redirects: If page or pageid is set to a redirect, resolve it
+            prop: Which pieces of information to get (list of property names)
+            wrapoutputclass: CSS class to use to wrap the parser output
+            usearticle: Use ArticleParserOptions hook for article page views
+            parsoid: Generate HTML conforming to MediaWiki DOM spec using Parsoid
+            pst: Do a pre-save transform on the input before parsing
+            onlypst: Do PST on input but don't parse it
+            section: Only parse content of section with this identifier
+            sectiontitle: New section title when section is "new"
+            disablelimitreport: Omit the limit report from parser output
+            disableeditsection: Omit edit section links from parser output
+            disablestylededuplication: Do not deduplicate inline stylesheets
+            showstrategykeys: Include internal merge strategy info in jsconfigvars
+            preview: Parse in preview mode
+            sectionpreview: Parse in section preview mode
+            disabletoc: Omit table of contents in output
+            useskin: Apply selected skin to parser output
+            contentformat: Content serialization format for input text
+            contentmodel: Content model of input text
+            mobileformat: Return parse output suitable for mobile devices
+            templatesandboxprefix: Template sandbox prefix
+            templatesandboxtitle: Parse page using templatesandboxtext
+            templatesandboxtext: Parse page using this content
+            templatesandboxcontentmodel: Content model of templatesandboxtext
+            templatesandboxcontentformat: Content format of templatesandboxtext
+            **kwargs: Additional parameters
+
+        Returns:
+            API response dictionary containing parsed content
+        """
+        params = {
+            "action": "parse",
+            "format": "json",
+            "formatversion": "2"
+        }
+
+        # Page/content identification - validate mutual exclusivity
+        identification_params = [title, pageid, oldid, text, page]
+        provided_params = [p for p in identification_params if p is not None]
+
+        if len(provided_params) == 0:
+            raise ValueError("Must provide one of: title, pageid, oldid, text, or page")
+
+        # Set page/content identification parameters
+        if title:
+            params["title"] = title
+        if pageid:
+            params["pageid"] = str(pageid)
+        if oldid:
+            params["oldid"] = str(oldid)
+        if text:
+            params["text"] = text
+        if page:
+            params["page"] = page
+        if summary:
+            params["summary"] = summary
+        if revid:
+            params["revid"] = str(revid)
+
+        # Content control parameters
+        if redirects:
+            params["redirects"] = "1"
+
+        # Default prop if not specified
+        if prop is None:
+            prop = ["text", "langlinks", "categories", "links", "templates",
+                   "images", "externallinks", "sections", "revid", "displaytitle",
+                   "iwlinks", "properties", "parsewarnings"]
+
+        if prop:
+            params["prop"] = "|".join(prop)
+
+        # Output formatting parameters
+        if wrapoutputclass:
+            params["wrapoutputclass"] = wrapoutputclass
+        if usearticle:
+            params["usearticle"] = "1"
+        if parsoid:
+            params["parsoid"] = "1"
+        if pst:
+            params["pst"] = "1"
+        if onlypst:
+            params["onlypst"] = "1"
+
+        # Section parameters
+        if section:
+            params["section"] = section
+        if sectiontitle:
+            params["sectiontitle"] = sectiontitle
+
+        # Output control parameters
+        if disablelimitreport:
+            params["disablelimitreport"] = "1"
+        if disableeditsection:
+            params["disableeditsection"] = "1"
+        if disablestylededuplication:
+            params["disablestylededuplication"] = "1"
+        if showstrategykeys:
+            params["showstrategykeys"] = "1"
+        if preview:
+            params["preview"] = "1"
+        if sectionpreview:
+            params["sectionpreview"] = "1"
+        if disabletoc:
+            params["disabletoc"] = "1"
+
+        # Rendering parameters
+        if useskin:
+            params["useskin"] = useskin
+        if mobileformat:
+            params["mobileformat"] = "1"
+
+        # Content model parameters
+        if contentformat:
+            params["contentformat"] = contentformat
+        if contentmodel:
+            params["contentmodel"] = contentmodel
+
+        # Template sandbox parameters
+        if templatesandboxprefix:
+            params["templatesandboxprefix"] = "|".join(templatesandboxprefix)
+        if templatesandboxtitle:
+            params["templatesandboxtitle"] = templatesandboxtitle
+        if templatesandboxtext:
+            params["templatesandboxtext"] = templatesandboxtext
+        if templatesandboxcontentmodel:
+            params["templatesandboxcontentmodel"] = templatesandboxcontentmodel
+        if templatesandboxcontentformat:
+            params["templatesandboxcontentformat"] = templatesandboxcontentformat
+
+        # Add any additional parameters
+        params.update(kwargs)
+
+        response = await self.auth_client._make_request("GET", params=params)
+        return response
+
     async def move_page(
         self,
         from_title: str | None = None,

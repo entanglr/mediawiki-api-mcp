@@ -72,6 +72,12 @@ async def handle_parse_page(
     if templatesandboxprefix and isinstance(templatesandboxprefix, str):
         templatesandboxprefix = [p.strip() for p in templatesandboxprefix.split("|") if p.strip()]
 
+    # Convert title parameter to page parameter for consistency with MediaWiki API
+    # The Parse API primarily uses 'page' parameter, not 'title'
+    if title and not page:
+        page = title
+        title = None
+
     try:
         result = await client.parse_page(
             title=title,
@@ -152,14 +158,15 @@ async def handle_parse_page(
                 error_details.append("Note: Received 'query' response - this indicates the wrong API endpoint was used")
                 error_details.append("The Parse API should return a 'parse' key, not 'query'")
 
+                # Check for missing pages in query response
+                if isinstance(result.get("query", {}).get("pages", {}), dict):
+                    pages = result["query"]["pages"]
+                    missing_pages = [page for page in pages.values() if page.get("missing", False)]
+                    if missing_pages:
+                        error_details.append(f"Note: {len(missing_pages)} page(s) marked as missing in query response")
+
             elif "missing" in result:
                 error_details.append("Note: Page is marked as missing in the response")
-
-            elif isinstance(result.get("query", {}).get("pages", {}), dict):
-                pages = result["query"]["pages"]
-                missing_pages = [page for page in pages.values() if page.get("missing", False)]
-                if missing_pages:
-                    error_details.append(f"Note: {len(missing_pages)} page(s) marked as missing in query response")
 
             elif "badtitle" in str(result).lower():
                 error_details.append("Note: Response suggests the page title may be invalid")

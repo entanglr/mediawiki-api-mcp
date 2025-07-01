@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import Callable
+from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
@@ -97,7 +98,7 @@ def register_wiki_page_parse_tool(mcp: FastMCP, get_config: Callable[[], MediaWi
                 from ..handlers import handle_parse_page
 
                 # Convert FastMCP parameters to handler arguments
-                arguments = {}
+                arguments: dict[str, Any] = {}
 
                 # Content source parameters
                 if title:

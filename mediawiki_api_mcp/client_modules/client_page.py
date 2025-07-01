@@ -377,7 +377,7 @@ class MediaWikiPageClient:
             if (title or pageid or oldid or page) and not pst and not onlypst:
                 prop.extend(["langlinks", "iwlinks", "properties"])
 
-        if prop:
+        if prop is not None:
             params["prop"] = "|".join(prop)
 
         # Output formatting parameters

@@ -368,6 +368,113 @@ class TestParseHandlers:
         assert call_args.kwargs["prop"] == []
 
     @pytest.mark.asyncio
+    async def test_handle_parse_page_summary_fallback_mechanism(self, mock_client):
+        """Test fallback mechanism when summary parsing returns minimal content."""
+        # First call (summary parsing) returns minimal content
+        # Second call (fallback text parsing) returns proper content
+        side_effect_values = [
+            {
+                "parse": {
+                    "title": "API",
+                    "pageid": 0,
+                    "revid": 0,
+                    "text": {"*": '<div class="mw-parser-output"></div>'}  # Minimal content
+                }
+            },
+            {
+                "parse": {
+                    "title": "API",
+                    "pageid": 0,
+                    "revid": 0,
+                    "text": {"*": "<p>Some <a href=\"/wiki/Link\">link</a> and <b>formatting</b></p>"},
+                    "links": [{"*": "Link"}],
+                    "parsewarnings": []
+                }
+            }
+        ]
+
+        mock_client.parse_page.side_effect = side_effect_values
+
+        arguments = {
+            "summary": "Some [[link]] and '''formatting'''"
+        }
+
+        result = await handle_parse_page(mock_client, arguments)
+
+        assert len(result) == 1
+        result_text = result[0].text
+
+        # Should show the fallback worked
+        assert "Parse Results for: API" in result_text
+        assert "Some <a href=\"/wiki/Link\">link</a>" in result_text or "Link" in result_text
+        assert "formatting" in result_text
+
+        # Verify both calls were made - first for summary, then for fallback
+        assert mock_client.parse_page.call_count == 2
+
+        # Check first call (summary parsing)
+        first_call = mock_client.parse_page.call_args_list[0]
+        assert first_call.kwargs["summary"] == "Some [[link]] and '''formatting'''"
+        assert first_call.kwargs["prop"] == []
+
+        # Check second call (fallback text parsing)
+        second_call = mock_client.parse_page.call_args_list[1]
+        assert second_call.kwargs["text"] == "Some [[link]] and '''formatting'''"
+        assert second_call.kwargs["contentmodel"] == "wikitext"
+        assert "text" in second_call.kwargs["prop"]
+
+    @pytest.mark.asyncio
+    async def test_handle_parse_page_summary_no_fallback_when_content_good(self, mock_client):
+        """Test that fallback is not triggered when summary parsing returns good content."""
+        mock_client.parse_page.return_value = {
+            "parse": {
+                "title": "API",
+                "pageid": 0,
+                "revid": 0,
+                "text": {"*": "<p>Good summary content with <a href=\"/wiki/Link\">link</a> and <b>formatting</b></p>"}
+            }
+        }
+
+        arguments = {
+            "summary": "Good summary with [[link]] and '''formatting'''"
+        }
+
+        result = await handle_parse_page(mock_client, arguments)
+
+        assert len(result) == 1
+        result_text = result[0].text
+
+        # Should show the good content
+        assert "Good summary content" in result_text
+        assert "link" in result_text
+        assert "formatting" in result_text
+
+        # Should only make one call (no fallback needed)
+        assert mock_client.parse_page.call_count == 1
+
+        # Verify it was the summary call
+        call_args = mock_client.parse_page.call_args
+        assert call_args.kwargs["summary"] == "Good summary with [[link]] and '''formatting'''"
+
+    @pytest.mark.asyncio
+    async def test_minimal_content_detection(self):
+        """Test the _is_minimal_content helper function."""
+        from mediawiki_api_mcp.handlers.wiki_page_parse import _is_minimal_content
+
+        # Should detect minimal content
+        assert _is_minimal_content("") == True
+        assert _is_minimal_content("   ") == True
+        assert _is_minimal_content("<p></p>") == True
+        assert _is_minimal_content("<div></div>") == True
+        assert _is_minimal_content('<div class="mw-parser-output"></div>') == True
+        assert _is_minimal_content('<div class="mw-parser-output">   </div>') == True
+
+        # Should not detect good content as minimal
+        assert _is_minimal_content("<p>Real content here</p>") == False
+        assert _is_minimal_content("<p>Some <b>formatted</b> text</p>") == False
+        assert _is_minimal_content('<div class="mw-parser-output"><p>Actual content</p></div>') == False
+
+    @pytest.mark.asyncio
     async def test_title_vs_page_parameter_consistency(self, mock_client):
         """Test that title and page parameters produce identical API calls."""
         mock_client.parse_page.return_value = {

@@ -63,6 +63,7 @@ async def handle_parse_page(
         # Summary-only parsing requires empty prop parameter according to API docs
         if prop is None:
             prop = []
+        logger.debug(f"Summary-only parsing requested: {summary}")
 
     # Convert prop to list if it's a string
     if prop and isinstance(prop, str):
@@ -79,6 +80,9 @@ async def handle_parse_page(
         title = None
 
     try:
+        # Track if this is a summary-only parsing request for fallback handling
+        is_summary_only = summary and not any([title, pageid, oldid, text, page])
+
         result = await client.parse_page(
             title=title,
             pageid=pageid,
@@ -113,6 +117,53 @@ async def handle_parse_page(
             templatesandboxcontentmodel=templatesandboxcontentmodel,
             templatesandboxcontentformat=templatesandboxcontentformat
         )
+
+        # If this was a summary-only parsing request and we got minimal content,
+        # try a fallback approach by parsing the summary as regular text
+        if is_summary_only and "parse" in result:
+            parse_data = result["parse"]
+            if "text" in parse_data:
+                text_content = parse_data["text"]
+                if isinstance(text_content, dict) and "*" in text_content:
+                    text_content = text_content["*"]
+
+                # Check for minimal content (empty or very minimal parser output)
+                if _is_minimal_content(text_content):
+                    logger.warning(f"Summary parsing returned minimal content, attempting fallback for: {summary}")
+
+                    # Try parsing the summary as regular text instead
+                    try:
+                        fallback_result = await client.parse_page(
+                            text=summary,
+                            contentmodel="wikitext",
+                            prop=["text", "categories", "links", "templates", "parsewarnings"],
+                            disablelimitreport=disablelimitreport,
+                            disableeditsection=disableeditsection
+                        )
+
+                        if "parse" in fallback_result:
+                            fallback_parse = fallback_result["parse"]
+                            if "text" in fallback_parse:
+                                fallback_text = fallback_parse["text"]
+                                if isinstance(fallback_text, dict) and "*" in fallback_text:
+                                    fallback_text = fallback_text["*"]
+
+                                # If fallback has better content, use it with a note
+                                if not _is_minimal_content(fallback_text):
+                                    logger.info("Fallback summary parsing succeeded, using text parsing approach")
+                                    # Update the result with fallback data but preserve original structure
+                                    parse_data["text"] = fallback_parse["text"]
+                                    # Add other useful properties from fallback if available
+                                    for prop_name in ["categories", "links", "templates", "parsewarnings"]:
+                                        if prop_name in fallback_parse:
+                                            parse_data[prop_name] = fallback_parse[prop_name]
+                                    # Add a note about the fallback
+                                    if "parsewarnings" not in parse_data:
+                                        parse_data["parsewarnings"] = []
+                                    parse_data["parsewarnings"].append("Note: Used text parsing fallback due to summary parsing issue")
+                    except Exception as fallback_error:
+                        logger.warning(f"Fallback summary parsing also failed: {fallback_error}")
+                        # Continue with original result
 
         # Handle API errors
         if "error" in result:
@@ -248,14 +299,12 @@ async def _format_parse_result(
 
         # Check for minimal content issue mentioned in bug report
         if text_content and len(text_content.strip()) > 0:
-            # Check if it's just an empty div (common issue)
-            if ('<div class="mw-content-' in text_content and
-                text_content.count('<') <= 3 and
-                '<!-- metadata only -->' not in text_content and
-                len(text_content.strip()) < 200):
+            # Check if it's just an empty div (common issue) or if fallback was used
+            is_minimal = _is_minimal_content(text_content)
+            if is_minimal:
                 # This looks like minimal content - add warning
                 formatted_sections.append(_format_section("Parsed HTML",
-                    f"WARNING: Content appears minimal. This may indicate a page parsing issue.\n\n{text_content}"))
+                    f"WARNING: Content appears minimal. This may indicate a summary parsing issue.\n\n{text_content}"))
             else:
                 formatted_sections.append(_format_section("Parsed HTML", text_content))
         else:
@@ -376,6 +425,43 @@ async def _format_parse_result(
         type="text",
         text="\n".join(response_lines)
     )]
+
+
+def _is_minimal_content(content: str) -> bool:
+    """
+    Check if content appears to be minimal/empty, indicating a parsing issue.
+
+    This detects cases where the MediaWiki API returns nearly empty content,
+    which often indicates that the summary parsing didn't work properly.
+    """
+    if not content or len(content.strip()) == 0:
+        return True
+
+    # Check for common minimal content patterns
+    content_lower = content.lower().strip()
+
+    # Empty parser wrapper divs with minimal content
+    if ('<div class="mw-' in content_lower and
+        content_lower.count('<') <= 3 and
+        len(content.strip()) < 200):
+        return True
+
+    # Just whitespace or basic HTML structure
+    if content_lower in ['<p></p>', '<div></div>', ''] or content_lower.isspace():
+        return True
+
+    # Check for content that's basically just a parser wrapper with no actual content
+    # Remove common wrapper patterns and see if there's actual content left
+    import re
+    # Remove parser wrapper divs
+    cleaned = re.sub(r'<div[^>]*class="[^"]*mw-[^"]*"[^>]*>', '', content)
+    cleaned = re.sub(r'</div>', '', cleaned)
+    # Remove empty paragraphs and whitespace
+    cleaned = re.sub(r'<p[^>]*></p>', '', cleaned)
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+
+    # If after removing wrappers there's very little content, it's likely minimal
+    return len(cleaned) < 10
 
 
 def _format_section(title: str, content: str) -> str:

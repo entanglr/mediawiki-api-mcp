@@ -462,17 +462,17 @@ class TestParseHandlers:
         from mediawiki_api_mcp.handlers.wiki_page_parse import _is_minimal_content
 
         # Should detect minimal content
-        assert _is_minimal_content("") == True
-        assert _is_minimal_content("   ") == True
-        assert _is_minimal_content("<p></p>") == True
-        assert _is_minimal_content("<div></div>") == True
-        assert _is_minimal_content('<div class="mw-parser-output"></div>') == True
-        assert _is_minimal_content('<div class="mw-parser-output">   </div>') == True
+        assert _is_minimal_content("")
+        assert _is_minimal_content("   ")
+        assert _is_minimal_content("<p></p>")
+        assert _is_minimal_content("<div></div>")
+        assert _is_minimal_content('<div class="mw-parser-output"></div>')
+        assert _is_minimal_content('<div class="mw-parser-output">   </div>')
 
         # Should not detect good content as minimal
-        assert _is_minimal_content("<p>Real content here</p>") == False
-        assert _is_minimal_content("<p>Some <b>formatted</b> text</p>") == False
-        assert _is_minimal_content('<div class="mw-parser-output"><p>Actual content</p></div>') == False
+        assert not _is_minimal_content("<p>Real content here</p>")
+        assert not _is_minimal_content("<p>Some <b>formatted</b> text</p>")
+        assert not _is_minimal_content('<div class="mw-parser-output"><p>Actual content</p></div>')
 
     @pytest.mark.asyncio
     async def test_title_vs_page_parameter_consistency(self, mock_client):

@@ -339,3 +339,129 @@ class TestParseHandlers:
 
         assert len(result) == 1
         assert "WARNING: No text content in parse result" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_handle_parse_page_summary_only(self, mock_client):
+        """Test parsing summary parameter independently."""
+        mock_client.parse_page.return_value = {
+            "parse": {
+                "title": "API",
+                "pageid": 0,
+                "revid": 0,
+                "text": {"*": "<p>Some <b>summary</b> content</p>"}
+            }
+        }
+
+        arguments = {
+            "summary": "Some [[link]] summary"
+        }
+
+        result = await handle_parse_page(mock_client, arguments)
+
+        assert len(result) == 1
+        assert "Parse Results for: API" in result[0].text
+        # Verify the summary parameter was passed correctly
+        mock_client.parse_page.assert_called_once()
+        call_args = mock_client.parse_page.call_args
+        assert call_args.kwargs["summary"] == "Some [[link]] summary"
+        # Verify prop was set to empty list for summary parsing
+        assert call_args.kwargs["prop"] == []
+
+    @pytest.mark.asyncio
+    async def test_title_vs_page_parameter_consistency(self, mock_client):
+        """Test that title and page parameters produce identical API calls."""
+        mock_client.parse_page.return_value = {
+            "parse": {
+                "title": "Test Page",
+                "pageid": 12345,
+                "revid": 67890,
+                "text": {"*": "<p>Test content</p>"}
+            }
+        }
+
+        # Test with title parameter
+        arguments_title = {"title": "Test Page"}
+        await handle_parse_page(mock_client, arguments_title)
+
+        # Get the call arguments for title
+        title_call_args = mock_client.parse_page.call_args
+
+        # Reset mock
+        mock_client.reset_mock()
+        mock_client.parse_page.return_value = {
+            "parse": {
+                "title": "Test Page",
+                "pageid": 12345,
+                "revid": 67890,
+                "text": {"*": "<p>Test content</p>"}
+            }
+        }
+
+        # Test with page parameter
+        arguments_page = {"page": "Test Page"}
+        await handle_parse_page(mock_client, arguments_page)
+
+        # Get the call arguments for page
+        page_call_args = mock_client.parse_page.call_args
+
+        # The API calls should be identical - both should use page parameter
+        assert title_call_args.kwargs.get("page") == "Test Page"
+        assert page_call_args.kwargs.get("page") == "Test Page"
+        assert title_call_args.kwargs.get("title") is None  # title should not be passed to API
+        assert page_call_args.kwargs.get("title") is None
+
+    @pytest.mark.asyncio
+    async def test_enhanced_error_handling(self, mock_client):
+        """Test enhanced error handling with detailed diagnostic information."""
+        # Test case where page is missing
+        mock_client.parse_page.return_value = {
+            "query": {
+                "pages": {
+                    "-1": {
+                        "missing": True,
+                        "title": "Nonexistent Page"
+                    }
+                }
+            }
+        }
+
+        arguments = {
+            "title": "Nonexistent Page"
+        }
+
+        result = await handle_parse_page(mock_client, arguments)
+
+        assert len(result) == 1
+        error_text = result[0].text
+
+        # Check that enhanced error information is present
+        assert "Error: Unexpected response format from Parse API" in error_text
+        assert "Response keys: ['query']" in error_text
+        assert "Received 'query' response - this indicates the wrong API endpoint was used" in error_text
+        assert "Used parameters: title='Nonexistent Page'" in error_text
+        assert "page(s) marked as missing in query response" in error_text
+
+    @pytest.mark.asyncio
+    async def test_enhanced_error_handling_invalid_params(self, mock_client):
+        """Test enhanced error handling for invalid parameter combinations."""
+        # Test case with parameter conflict error
+        mock_client.parse_page.return_value = {
+            "error": {
+                "code": "invalidparammix",
+                "info": "The parameters page, title cannot be used together."
+            }
+        }
+
+        arguments = {
+            "title": "Test Page",
+            "text": "Some text"
+        }
+
+        result = await handle_parse_page(mock_client, arguments)
+
+        assert len(result) == 1
+        error_text = result[0].text
+
+        # Should handle this as a regular API error, not unexpected response
+        assert "MediaWiki API Error (invalidparammix)" in error_text
+        assert "parameters page, title cannot be used together" in error_text

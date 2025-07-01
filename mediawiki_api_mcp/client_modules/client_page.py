@@ -322,14 +322,14 @@ class MediaWikiPageClient:
         }
 
         # Page/content identification - validate mutual exclusivity and set correct parameters
-        identification_params = [title, pageid, oldid, text, page]
+        identification_params = [title, pageid, oldid, text, page, summary]
         provided_params = [p for p in identification_params if p is not None]
 
         if len(provided_params) == 0:
-            raise ValueError("Must provide one of: title, pageid, oldid, text, or page")
+            raise ValueError("Must provide one of: title, pageid, oldid, text, page, or summary")
 
         # Set page/content identification parameters according to MediaWiki Parse API rules
-        # Priority: oldid > pageid > page/title > text
+        # Priority: oldid > pageid > page > title > text > summary
         if oldid:
             # Parse specific revision - use oldid (highest priority)
             params["oldid"] = str(oldid)
@@ -339,22 +339,20 @@ class MediaWikiPageClient:
         elif page:
             # Parse existing page by title - use page parameter
             params["page"] = page
-        elif title and not text:
-            # Parse existing page by title when no text provided - use page parameter
+        elif title:
+            # Parse existing page by title - always use page parameter for consistency
+            # This fixes the title vs page parameter inconsistency bug
             params["page"] = title
         elif text:
             # Parse arbitrary text - use text parameter
             params["text"] = text
-            # Optionally specify which page the text belongs to for context
-            if title:
-                params["title"] = title
-        else:
-            # Fallback case - if we have a title, treat it as a page to parse
-            if title:
-                params["page"] = title
-
-        if summary:
+        elif summary:
+            # Parse summary only - use summary parameter with empty prop
             params["summary"] = summary
+            # For summary parsing, prop should be empty according to API docs
+            if prop is None:
+                prop = []
+
         if revid:
             params["revid"] = str(revid)
 

@@ -58,6 +58,12 @@ async def handle_parse_page(
             text="Error: Must provide one of: title, pageid, oldid, text, page, or summary"
         )]
 
+    # Special handling for summary-only parsing
+    if summary and not any([title, pageid, oldid, text, page]):
+        # Summary-only parsing requires empty prop parameter according to API docs
+        if prop is None:
+            prop = []
+
     # Convert prop to list if it's a string
     if prop and isinstance(prop, str):
         prop = [p.strip() for p in prop.split("|") if p.strip()]
@@ -134,22 +140,55 @@ async def handle_parse_page(
                 warning_text = "API Warnings:\n" + "\n".join(warning_messages)
 
         if "parse" not in result:
-            # More detailed error reporting for debugging
+            # Enhanced error reporting for debugging
             response_keys = list(result.keys())
-            error_details = f"Response keys: {response_keys}"
 
-            # Check for common error patterns
+            # Create detailed error message based on response content
+            error_details = []
+            error_details.append(f"Response keys: {response_keys}")
+
+            # Check for common error patterns and provide specific guidance
             if "query" in result:
-                # This might indicate the wrong API endpoint was used
-                error_details += "\nNote: Received 'query' response - verify Parse API is being used correctly"
+                error_details.append("Note: Received 'query' response - this indicates the wrong API endpoint was used")
+                error_details.append("The Parse API should return a 'parse' key, not 'query'")
 
-            if "missing" in result or (isinstance(result.get("query", {}).get("pages", {}), dict) and
-                                     any(page.get("missing", False) for page in result["query"]["pages"].values())):
-                error_details += "\nNote: Page appears to be missing from the wiki"
+            elif "missing" in result:
+                error_details.append("Note: Page is marked as missing in the response")
+
+            elif isinstance(result.get("query", {}).get("pages", {}), dict):
+                pages = result["query"]["pages"]
+                missing_pages = [page for page in pages.values() if page.get("missing", False)]
+                if missing_pages:
+                    error_details.append(f"Note: {len(missing_pages)} page(s) marked as missing in query response")
+
+            elif "badtitle" in str(result).lower():
+                error_details.append("Note: Response suggests the page title may be invalid")
+
+            elif any(key in result for key in ["nosuchsection", "invalidsection"]):
+                error_details.append("Note: The specified section does not exist or is invalid")
+
+            elif "invalidparammix" in str(result).lower():
+                error_details.append("Note: Invalid parameter combination detected")
+                error_details.append("Check that conflicting parameters (page/title/text/oldid) are not used together")
+
+            # Add parameter information for debugging
+            used_params = []
+            for param in ["title", "pageid", "oldid", "text", "page", "summary"]:
+                value = arguments.get(param)
+                if value:
+                    used_params.append(f"{param}={repr(value)}")
+            if used_params:
+                error_details.append(f"Used parameters: {', '.join(used_params)}")
+
+            # Add full response for debugging in case of unknown errors
+            if len(str(result)) < 500:  # Only include full response if it's not too long
+                error_details.append(f"Full response: {result}")
+
+            error_message = "Error: Unexpected response format from Parse API.\n" + "\n".join(error_details)
 
             return [types.TextContent(
                 type="text",
-                text=f"Error: Unexpected response format from Parse API. {error_details}"
+                text=error_message
             )]
 
         return await _format_parse_result(result, prop, warning_text)

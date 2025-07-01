@@ -102,3 +102,31 @@ wiki_page_parse(oldid=12345, prop="text|parsewarnings")
 ```
 
 The tool returns comprehensive parsed content including HTML output, metadata, links, categories, templates, and any requested analysis information formatted in a readable structure.
+
+## Recent Bug Fixes and Improvements
+
+**Version Improvements (Latest)**:
+
+**Bug Fix #1: Enhanced Content Retrieval**
+- **Issue**: Pages returning empty content despite existing in database
+- **Solution**: Improved page identification logic with proper priority handling (oldid > pageid > page/title > text)
+- **Enhancement**: Added intelligent content detection that warns when minimal or missing content is returned
+- **Result**: Reliable parsing of existing pages with clear diagnostics for content issues
+
+**Bug Fix #2: Redirect Resolution**
+- **Issue**: Redirect pages parsed as empty content instead of target content
+- **Solution**: Proper implementation of `redirects` parameter to automatically resolve redirects to target pages
+- **Enhancement**: Transparent redirect following ensures users get content from the target page
+- **Result**: Redirect pages now correctly return the content from their target pages when `redirects=true`
+
+**Bug Fix #3: Section Parsing Validation**
+- **Issue**: "Unexpected response format" errors when using `section` parameter
+- **Solution**: Added comprehensive section parameter validation and proper error handling
+- **Enhancement**: Support for numeric sections, "new" sections, and template sections (T-prefix)
+- **Result**: Reliable section parsing with clear error messages for invalid section identifiers
+
+**Additional Improvements**:
+- Enhanced error reporting with detailed diagnostics for troubleshooting
+- Improved parameter validation to prevent common usage errors
+- Better handling of edge cases in content parsing and formatting
+- Comprehensive test coverage for all major functionality and edge cases

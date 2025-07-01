@@ -576,36 +576,34 @@ class TestParseHandlers:
     @pytest.mark.asyncio
     async def test_empty_prop_parameter_included_in_api_request(self, mock_client):
         """Test that empty prop parameter is correctly included in API request for summary parsing."""
-        from unittest.mock import AsyncMock, patch
+        from unittest.mock import AsyncMock, create_autospec
 
-        # Create a real MediaWiki client to test the parameter handling
-        with patch('mediawiki_api_mcp.client_modules.client_page.MediaWikiPageClient') as MockPageClient:
-            # Create a mock auth client
-            mock_auth = AsyncMock()
-            mock_auth._make_request = AsyncMock()
-            mock_auth._make_request.return_value = {
-                "parse": {
-                    "title": "API",
-                    "pageid": 0,
-                    "revid": 0,
-                    "text": {"*": "<p>Summary content</p>"}
-                }
+        # Create a properly mocked auth client
+        from mediawiki_api_mcp.client_modules.client_auth import MediaWikiAuthClient
+        mock_auth = create_autospec(MediaWikiAuthClient, spec_set=True, instance=True)
+        mock_auth._make_request = AsyncMock(return_value={
+            "parse": {
+                "title": "API",
+                "pageid": 0,
+                "revid": 0,
+                "text": {"*": "<p>Summary content</p>"}
             }
+        })
 
-            # Create the actual client instance to test
-            from mediawiki_api_mcp.client_modules.client_page import MediaWikiPageClient
-            page_client = MediaWikiPageClient(mock_auth)
+        # Create the actual client instance to test
+        from mediawiki_api_mcp.client_modules.client_page import MediaWikiPageClient
+        page_client = MediaWikiPageClient(mock_auth)
 
-            # Test summary parsing with empty prop
-            await page_client.parse_page(summary="Test [[link]] summary")
+        # Test summary parsing with empty prop
+        await page_client.parse_page(summary="Test [[link]] summary")
 
-            # Verify the API request was made with prop=""
-            mock_auth._make_request.assert_called_once()
-            call_args = mock_auth._make_request.call_args
-            api_params = call_args[1]['params']  # GET request uses params
+        # Verify the API request was made with prop=""
+        mock_auth._make_request.assert_called_once()
+        call_args = mock_auth._make_request.call_args
+        api_params = call_args[1]['params']  # GET request uses params
 
-            # The critical fix: prop should be present with empty value
-            assert 'prop' in api_params
-            assert api_params['prop'] == ""  # Empty string, not missing
-            assert api_params['summary'] == "Test [[link]] summary"
-            assert api_params['action'] == "parse"
+        # The critical fix: prop should be present with empty value
+        assert 'prop' in api_params
+        assert api_params['prop'] == ""  # Empty string, not missing
+        assert api_params['summary'] == "Test [[link]] summary"
+        assert api_params['action'] == "parse"

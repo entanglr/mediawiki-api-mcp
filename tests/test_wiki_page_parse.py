@@ -251,7 +251,7 @@ class TestParseHandlers:
     async def test_handle_parse_page_invalid_section(self, mock_client):
         """Test parse page with invalid section parameter."""
         # Mock a validation error
-        mock_client.parse_page.side_effect = ValueError("Section parameter must be a number or 'new'")
+        mock_client.parse_page.side_effect = ValueError("Section parameter must be a number, 'new', or 'T-' prefixed template section")
 
         arguments = {
             "title": "Test Page",
@@ -261,4 +261,81 @@ class TestParseHandlers:
         result = await handle_parse_page(mock_client, arguments)
 
         assert len(result) == 1
-        assert "Section parameter must be a number or 'new'" in result[0].text
+        assert "Section parameter must be a number, 'new', or 'T-' prefixed template section" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_handle_parse_page_valid_section_types(self, mock_client):
+        """Test parse page with valid section parameter types."""
+        mock_client.parse_page.return_value = {
+            "parse": {
+                "title": "Test Page",
+                "pageid": 12345,
+                "revid": 67890,
+                "text": {"*": "<p>Section content</p>"}
+            }
+        }
+
+        # Test integer section
+        arguments = {
+            "title": "Test Page",
+            "section": "1"
+        }
+        result = await handle_parse_page(mock_client, arguments)
+        assert len(result) == 1
+        assert "Parse Results for: Test Page" in result[0].text
+
+        # Test "new" section
+        arguments["section"] = "new"
+        result = await handle_parse_page(mock_client, arguments)
+        assert len(result) == 1
+        assert "Parse Results for: Test Page" in result[0].text
+
+        # Test template section
+        arguments["section"] = "T-1"
+        result = await handle_parse_page(mock_client, arguments)
+        assert len(result) == 1
+        assert "Parse Results for: Test Page" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_handle_parse_page_minimal_content_detection(self, mock_client):
+        """Test detection of minimal content issues."""
+        # Test minimal content that should trigger warning
+        mock_client.parse_page.return_value = {
+            "parse": {
+                "title": "Test Page",
+                "pageid": 12345,
+                "revid": 67890,
+                "text": {"*": '<div class="mw-content-ltr mw-parser-output" lang="en" dir="ltr"></div>'}
+            }
+        }
+
+        arguments = {
+            "title": "Test Page"
+        }
+
+        result = await handle_parse_page(mock_client, arguments)
+
+        assert len(result) == 1
+        assert "WARNING: Content appears minimal" in result[0].text
+
+    @pytest.mark.asyncio
+    async def test_handle_parse_page_missing_content(self, mock_client):
+        """Test detection of completely missing content."""
+        # Test no text content returned for existing page
+        mock_client.parse_page.return_value = {
+            "parse": {
+                "title": "Test Page",
+                "pageid": 12345,
+                "revid": 67890
+                # No "text" field
+            }
+        }
+
+        arguments = {
+            "title": "Test Page"
+        }
+
+        result = await handle_parse_page(mock_client, arguments)
+
+        assert len(result) == 1
+        assert "WARNING: No text content in parse result" in result[0].text

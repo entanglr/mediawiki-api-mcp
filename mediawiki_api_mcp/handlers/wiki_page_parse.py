@@ -134,9 +134,22 @@ async def handle_parse_page(
                 warning_text = "API Warnings:\n" + "\n".join(warning_messages)
 
         if "parse" not in result:
+            # More detailed error reporting for debugging
+            response_keys = list(result.keys())
+            error_details = f"Response keys: {response_keys}"
+
+            # Check for common error patterns
+            if "query" in result:
+                # This might indicate the wrong API endpoint was used
+                error_details += "\nNote: Received 'query' response - verify Parse API is being used correctly"
+
+            if "missing" in result or (isinstance(result.get("query", {}).get("pages", {}), dict) and
+                                     any(page.get("missing", False) for page in result["query"]["pages"].values())):
+                error_details += "\nNote: Page appears to be missing from the wiki"
+
             return [types.TextContent(
                 type="text",
-                text=f"Error: Unexpected response format from Parse API. Response keys: {list(result.keys())}"
+                text=f"Error: Unexpected response format from Parse API. {error_details}"
             )]
 
         return await _format_parse_result(result, prop, warning_text)
@@ -186,7 +199,28 @@ async def _format_parse_result(
         text_content = parse_data["text"]
         if isinstance(text_content, dict) and "*" in text_content:
             text_content = text_content["*"]
-        formatted_sections.append(_format_section("Parsed HTML", text_content))
+
+        # Check for minimal content issue mentioned in bug report
+        if text_content and len(text_content.strip()) > 0:
+            # Check if it's just an empty div (common issue)
+            if ('<div class="mw-content-' in text_content and
+                text_content.count('<') <= 3 and
+                '<!-- metadata only -->' not in text_content and
+                len(text_content.strip()) < 200):
+                # This looks like minimal content - add warning
+                formatted_sections.append(_format_section("Parsed HTML",
+                    f"WARNING: Content appears minimal. This may indicate a page parsing issue.\n\n{text_content}"))
+            else:
+                formatted_sections.append(_format_section("Parsed HTML", text_content))
+        else:
+            formatted_sections.append(_format_section("Parsed HTML",
+                "WARNING: No HTML content returned. The page may be empty or there may be a parsing issue."))
+    else:
+        # Check if this was an existing page request but no text was returned
+        if any(parse_data.get(key) for key in ["pageid", "title"]) and parse_data.get("pageid", 0) > 0:
+            formatted_sections.append(_format_section("Parsed HTML",
+                "WARNING: No text content in parse result for existing page. This may indicate the page is empty or a parsing error occurred."))
+
 
     # Wikitext
     if "wikitext" in parse_data:

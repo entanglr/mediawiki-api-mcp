@@ -329,14 +329,15 @@ class MediaWikiPageClient:
             raise ValueError("Must provide one of: title, pageid, oldid, text, or page")
 
         # Set page/content identification parameters according to MediaWiki Parse API rules
+        # Priority: oldid > pageid > page/title > text
         if oldid:
-            # Parse specific revision - use oldid
+            # Parse specific revision - use oldid (highest priority)
             params["oldid"] = str(oldid)
         elif pageid:
-            # Parse existing page by ID - use pageid
+            # Parse existing page by ID - use pageid (overrides page parameter)
             params["pageid"] = str(pageid)
         elif page:
-            # Parse existing page by title - use page
+            # Parse existing page by title - use page parameter
             params["page"] = page
         elif title and not text:
             # Parse existing page by title when no text provided - use page parameter
@@ -344,9 +345,13 @@ class MediaWikiPageClient:
         elif text:
             # Parse arbitrary text - use text parameter
             params["text"] = text
-            # Optionally specify which page the text belongs to
+            # Optionally specify which page the text belongs to for context
             if title:
                 params["title"] = title
+        else:
+            # Fallback case - if we have a title, treat it as a page to parse
+            if title:
+                params["page"] = title
 
         if summary:
             params["summary"] = summary
@@ -357,11 +362,22 @@ class MediaWikiPageClient:
         if redirects:
             params["redirects"] = "1"
 
-        # Default prop if not specified
+        # Default prop if not specified - use conservative defaults
         if prop is None:
-            prop = ["text", "langlinks", "categories", "links", "templates",
-                   "images", "externallinks", "sections", "revid", "displaytitle",
-                   "iwlinks", "properties", "parsewarnings"]
+            # Start with basic properties that are supported by most MediaWiki installations
+            prop = ["text", "categories", "links", "sections", "revid"]
+
+            # Add additional properties if specific functionality is requested
+            if not (text or summary):  # Only for existing pages, not arbitrary text parsing
+                prop.extend(["displaytitle", "parsewarnings"])
+
+            # Add template and image info for existing pages
+            if title or pageid or oldid or page:
+                prop.extend(["templates", "images", "externallinks"])
+
+            # Add advanced properties only when explicitly parsing existing pages
+            if (title or pageid or oldid or page) and not pst and not onlypst:
+                prop.extend(["langlinks", "iwlinks", "properties"])
 
         if prop:
             params["prop"] = "|".join(prop)
@@ -379,11 +395,14 @@ class MediaWikiPageClient:
             params["onlypst"] = "1"
 
         # Section parameters - validate section parameter
-        if section:
-            # Ensure section is a valid identifier (number or 'new')
-            if section != "new" and not section.isdigit():
-                raise ValueError("Section parameter must be a number or 'new'")
-            params["section"] = section
+        if section is not None:
+            # Convert section to string if it's an integer
+            section_str = str(section)
+            # Ensure section is a valid identifier (number, 'new', or 'T-' prefix for template sections)
+            if section_str == "new" or section_str.isdigit() or section_str.startswith("T-"):
+                params["section"] = section_str
+            else:
+                raise ValueError("Section parameter must be a number, 'new', or 'T-' prefixed template section")
         if sectiontitle:
             params["sectiontitle"] = sectiontitle
 

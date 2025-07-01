@@ -121,7 +121,7 @@ class TestParseHandlers:
         result = await handle_parse_page(mock_client, arguments)
 
         assert len(result) == 1
-        assert "Error: Unexpected response format from Parse API" in result[0].text
+        assert "MediaWiki API Error: Invalid request" in result[0].text
 
     @pytest.mark.asyncio
     async def test_handle_parse_page_exception(self, mock_client):
@@ -246,3 +246,19 @@ class TestParseHandlers:
         mock_client.parse_page.assert_called_once()
         call_args = mock_client.parse_page.call_args
         assert call_args.kwargs["templatesandboxprefix"] == ["User:Test", "User:Demo"]
+
+    @pytest.mark.asyncio
+    async def test_handle_parse_page_invalid_section(self, mock_client):
+        """Test parse page with invalid section parameter."""
+        # Mock a validation error
+        mock_client.parse_page.side_effect = ValueError("Section parameter must be a number or 'new'")
+
+        arguments = {
+            "title": "Test Page",
+            "section": "invalid_section"
+        }
+
+        result = await handle_parse_page(mock_client, arguments)
+
+        assert len(result) == 1
+        assert "Section parameter must be a number or 'new'" in result[0].text

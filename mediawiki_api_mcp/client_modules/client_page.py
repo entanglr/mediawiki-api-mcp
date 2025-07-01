@@ -321,24 +321,33 @@ class MediaWikiPageClient:
             "formatversion": "2"
         }
 
-        # Page/content identification - validate mutual exclusivity
+        # Page/content identification - validate mutual exclusivity and set correct parameters
         identification_params = [title, pageid, oldid, text, page]
         provided_params = [p for p in identification_params if p is not None]
 
         if len(provided_params) == 0:
             raise ValueError("Must provide one of: title, pageid, oldid, text, or page")
 
-        # Set page/content identification parameters
-        if title:
-            params["title"] = title
-        if pageid:
-            params["pageid"] = str(pageid)
+        # Set page/content identification parameters according to MediaWiki Parse API rules
         if oldid:
+            # Parse specific revision - use oldid
             params["oldid"] = str(oldid)
-        if text:
-            params["text"] = text
-        if page:
+        elif pageid:
+            # Parse existing page by ID - use pageid
+            params["pageid"] = str(pageid)
+        elif page:
+            # Parse existing page by title - use page
             params["page"] = page
+        elif title and not text:
+            # Parse existing page by title when no text provided - use page parameter
+            params["page"] = title
+        elif text:
+            # Parse arbitrary text - use text parameter
+            params["text"] = text
+            # Optionally specify which page the text belongs to
+            if title:
+                params["title"] = title
+
         if summary:
             params["summary"] = summary
         if revid:
@@ -369,8 +378,11 @@ class MediaWikiPageClient:
         if onlypst:
             params["onlypst"] = "1"
 
-        # Section parameters
+        # Section parameters - validate section parameter
         if section:
+            # Ensure section is a valid identifier (number or 'new')
+            if section != "new" and not section.isdigit():
+                raise ValueError("Section parameter must be a number or 'new'")
             params["section"] = section
         if sectiontitle:
             params["sectiontitle"] = sectiontitle

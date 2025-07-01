@@ -102,13 +102,44 @@ async def handle_parse_page(
             templatesandboxcontentformat=templatesandboxcontentformat
         )
 
+        # Handle API errors
+        if "error" in result:
+            error_info = result["error"]
+            if isinstance(error_info, dict):
+                error_code = error_info.get("code", "unknown")
+                error_message = error_info.get("info", "Unknown error")
+                return [types.TextContent(
+                    type="text",
+                    text=f"MediaWiki API Error ({error_code}): {error_message}"
+                )]
+            else:
+                # Handle case where error is a string
+                return [types.TextContent(
+                    type="text",
+                    text=f"MediaWiki API Error: {error_info}"
+                )]
+
+        # Handle warnings
+        warning_text = None
+        if "warnings" in result:
+            warnings = result["warnings"]
+            warning_messages = []
+            for key, warning in warnings.items():
+                if isinstance(warning, dict) and "*" in warning:
+                    warning_messages.append(f"{key}: {warning['*']}")
+                else:
+                    warning_messages.append(f"{key}: {warning}")
+
+            if warning_messages:
+                warning_text = "API Warnings:\n" + "\n".join(warning_messages)
+
         if "parse" not in result:
             return [types.TextContent(
                 type="text",
-                text="Error: Unexpected response format from Parse API"
+                text=f"Error: Unexpected response format from Parse API. Response keys: {list(result.keys())}"
             )]
 
-        return await _format_parse_result(result, prop)
+        return await _format_parse_result(result, prop, warning_text)
 
     except Exception as e:
         return [types.TextContent(
@@ -119,7 +150,8 @@ async def handle_parse_page(
 
 async def _format_parse_result(
     result: dict[str, Any],
-    requested_prop: list[str] | None
+    requested_prop: list[str] | None,
+    warning_text: str | None = None
 ) -> Sequence[types.TextContent]:
     """Format the parse result into a readable response."""
     parse_data = result["parse"]
@@ -135,6 +167,11 @@ async def _format_parse_result(
         f"Revision ID: {revid}",
         ""
     ]
+
+    # Show warnings if any
+    if warning_text:
+        response_lines.append(warning_text)
+        response_lines.append("")
 
     # Show which properties were requested
     if requested_prop:

@@ -12,6 +12,7 @@ The server provides various MCP tools with the `wiki_` prefix:
 |---|---|
 |[**`wiki_page_edit`**](docs/tools/wiki_page_edit.md)|Edit or create MediaWiki pages with comprehensive editing options|
 |[**`wiki_page_get`**](docs/tools/wiki_page_get.md)|Retrieve page information and content|
+|[**`wiki_page_parse`**](docs/tools/wiki_page_parse.md)|Parse page content with support for wikitext processing, HTML generation, metadata extraction, and advanced parsing features|
 |[**`wiki_page_move`**](docs/tools/wiki_page_move.md)|Move pages with support for talk pages, subpages, and redirects|
 |[**`wiki_page_delete`**](docs/tools/wiki_page_delete.md)|Delete pages with support for talk pages, watchlist management, and logging|
 |[**`wiki_page_undelete`**](docs/tools/wiki_page_undelete.md)|Undelete (restore) deleted MediaWiki pages with comprehensive restoration options|

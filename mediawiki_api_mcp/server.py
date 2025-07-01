@@ -12,6 +12,7 @@ from .server_tools.wiki_page_delete import register_wiki_page_delete_tool
 from .server_tools.wiki_page_edit import register_wiki_page_edit_tool
 from .server_tools.wiki_page_get import register_wiki_page_get_tool
 from .server_tools.wiki_page_move import register_wiki_page_move_tool
+from .server_tools.wiki_page_parse import register_wiki_page_parse_tool
 from .server_tools.wiki_page_undelete import register_wiki_page_undelete_tool
 from .server_tools.wiki_search import register_wiki_search_tool
 
@@ -46,6 +47,7 @@ def get_config() -> MediaWikiConfig:
 # Register all tools
 register_wiki_page_edit_tool(mcp, get_config)
 register_wiki_page_get_tool(mcp, get_config)
+register_wiki_page_parse_tool(mcp, get_config)
 register_wiki_search_tool(mcp, get_config)
 register_wiki_opensearch_tool(mcp, get_config)
 register_wiki_page_move_tool(mcp, get_config)

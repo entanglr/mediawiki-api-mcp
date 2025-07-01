@@ -59,6 +59,10 @@ class MediaWikiClient:
         """Get page extracts using the TextExtracts API."""
         return await self.page_client.get_page_extracts(**kwargs)
 
+    async def parse_page(self, **kwargs: Any) -> dict[str, Any]:
+        """Parse content and return parser output using the MediaWiki Parse API."""
+        return await self.page_client.parse_page(**kwargs)
+
     async def move_page(self, **kwargs: Any) -> dict[str, Any]:
         """Move a MediaWiki page."""
         return await self.page_client.move_page(**kwargs)

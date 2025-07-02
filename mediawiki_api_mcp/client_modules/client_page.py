@@ -720,3 +720,142 @@ class MediaWikiPageClient:
         except Exception as e:
             logger.error(f"Undelete request failed: {e}")
             raise
+
+    async def compare_page(
+        self,
+        fromtitle: str | None = None,
+        fromid: int | None = None,
+        fromrev: int | None = None,
+        totitle: str | None = None,
+        toid: int | None = None,
+        torev: int | None = None,
+        fromslots: str | None = None,
+        toslots: str | None = None,
+        prop: str | None = None,
+        difftype: str | None = None,
+        fromtext: str | None = None,
+        totext: str | None = None,
+        fromcontentformat: str | None = None,
+        tocontentformat: str | None = None,
+        fromcontentmodel: str | None = None,
+        tocontentmodel: str | None = None,
+        tosection: str | None = None,
+        slot_params: dict[str, Any] | None = None,
+        **kwargs: Any
+    ) -> dict[str, Any]:
+        """
+        Compare two revisions of wiki pages or arbitrary content using the MediaWiki Compare API.
+
+        Args:
+            fromtitle: First title to compare
+            fromid: First page ID to compare
+            fromrev: First revision to compare
+            totitle: Second title to compare
+            toid: Second page ID to compare
+            torev: Second revision to compare
+            fromslots: Specify slots to be modified (pipe-separated)
+            toslots: Specify slots to be modified (pipe-separated)
+            prop: Which pieces of information to return (use '*' for all)
+            difftype: Format of diff output ('inline', 'table', 'unified')
+            fromtext: Legacy parameter - Text content for 'from' side (deprecated)
+            totext: Legacy parameter - Text content for 'to' side (deprecated)
+            fromcontentformat: Legacy parameter - Content format for 'from' side (deprecated)
+            tocontentformat: Legacy parameter - Content format for 'to' side (deprecated)
+            fromcontentmodel: Legacy parameter - Content model for 'from' side (deprecated)
+            tocontentmodel: Legacy parameter - Content model for 'to' side (deprecated)
+            tosection: Legacy parameter - Section identifier for 'to' side (deprecated)
+            slot_params: Dictionary containing slot-specific parameters with keys like:
+                'fromtext-{slot}', 'totext-{slot}', 'fromcontentformat-{slot}',
+                'tocontentformat-{slot}', 'fromcontentmodel-{slot}', 'tocontentmodel-{slot}',
+                'fromsection-{slot}', 'tosection-{slot}', 'frompst-{slot}', 'topst-{slot}'
+            **kwargs: Additional parameters
+
+        Returns:
+            API response dictionary containing comparison data
+        """
+        params = {
+            "action": "compare",
+            "format": "json",
+            "formatversion": "2"
+        }
+
+        # Validate that at least one 'from' parameter is provided
+        from_params = [fromtitle, fromid, fromrev, fromtext, fromslots]
+        if not any(p is not None for p in from_params):
+            raise ValueError("At least one of the parameters fromtitle, fromid, fromrev, fromtext, or fromslots is required")
+
+        # Validate that at least one 'to' parameter is provided
+        to_params = [totitle, toid, torev, totext, toslots]
+        if not any(p is not None for p in to_params):
+            raise ValueError("At least one of the parameters totitle, toid, torev, totext, or toslots is required")
+
+        # Source content specification (From)
+        if fromtitle:
+            params["fromtitle"] = fromtitle
+        if fromid:
+            params["fromid"] = str(fromid)
+        if fromrev:
+            params["fromrev"] = str(fromrev)
+
+        # Target content specification (To)
+        if totitle:
+            params["totitle"] = totitle
+        if toid:
+            params["toid"] = str(toid)
+        if torev:
+            params["torev"] = str(torev)
+
+        # Slot parameters
+        if fromslots:
+            params["fromslots"] = fromslots
+        if toslots:
+            params["toslots"] = toslots
+
+        # Output control parameters
+        if prop:
+            params["prop"] = prop
+        if difftype:
+            params["difftype"] = difftype
+
+        # Legacy parameters (deprecated but still supported)
+        if fromtext:
+            params["fromtext"] = fromtext
+        if totext:
+            params["totext"] = totext
+        if fromcontentformat:
+            params["fromcontentformat"] = fromcontentformat
+        if tocontentformat:
+            params["tocontentformat"] = tocontentformat
+        if fromcontentmodel:
+            params["fromcontentmodel"] = fromcontentmodel
+        if tocontentmodel:
+            params["tocontentmodel"] = tocontentmodel
+        if tosection:
+            params["tosection"] = tosection
+
+        # Add slot-specific parameters if provided
+        if slot_params:
+            for key, value in slot_params.items():
+                if value is not None:
+                    # Handle boolean parameters for PST flags
+                    if key.endswith("pst") and isinstance(value, bool):
+                        params[key] = "1" if value else "0"
+                    else:
+                        params[key] = str(value)
+
+        # Add any additional parameters
+        params.update(kwargs)
+
+        try:
+            response = await self.auth_client._make_request("GET", params=params)
+
+            if "compare" in response:
+                logger.info(f"Successfully compared content")
+                return response
+            else:
+                logger.error(f"Compare failed: {response}")
+                return response
+
+        except Exception as e:
+            logger.error(f"Compare request failed: {e}")
+            raise

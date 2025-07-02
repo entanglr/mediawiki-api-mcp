@@ -8,6 +8,7 @@ from mcp.server.fastmcp import FastMCP
 from .config import MediaWikiConfig
 from .server_tools.wiki_meta_siteinfo import register_wiki_meta_siteinfo_tool
 from .server_tools.wiki_opensearch import register_wiki_opensearch_tool
+from .server_tools.wiki_page_compare import register_wiki_page_compare_tool
 from .server_tools.wiki_page_delete import register_wiki_page_delete_tool
 from .server_tools.wiki_page_edit import register_wiki_page_edit_tool
 from .server_tools.wiki_page_get import register_wiki_page_get_tool
@@ -48,6 +49,7 @@ def get_config() -> MediaWikiConfig:
 register_wiki_page_edit_tool(mcp, get_config)
 register_wiki_page_get_tool(mcp, get_config)
 register_wiki_page_parse_tool(mcp, get_config)
+register_wiki_page_compare_tool(mcp, get_config)
 register_wiki_search_tool(mcp, get_config)
 register_wiki_opensearch_tool(mcp, get_config)
 register_wiki_page_move_tool(mcp, get_config)

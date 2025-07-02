@@ -850,7 +850,7 @@ class MediaWikiPageClient:
             response = await self.auth_client._make_request("GET", params=params)
 
             if "compare" in response:
-                logger.info(f"Successfully compared content")
+                logger.info("Successfully compared content")
                 return response
             else:
                 logger.error(f"Compare failed: {response}")

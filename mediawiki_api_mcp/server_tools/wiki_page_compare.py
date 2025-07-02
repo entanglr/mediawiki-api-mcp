@@ -89,15 +89,15 @@ def register_wiki_page_compare_tool(mcp: FastMCP, get_config: Callable[[], Media
                 if fromtitle:
                     arguments["fromtitle"] = fromtitle
                 if fromid:
-                    arguments["fromid"] = fromid
+                    arguments["fromid"] = str(fromid)
                 if fromrev:
-                    arguments["fromrev"] = fromrev
+                    arguments["fromrev"] = str(fromrev)
                 if totitle:
                     arguments["totitle"] = totitle
                 if toid:
-                    arguments["toid"] = toid
+                    arguments["toid"] = str(toid)
                 if torev:
-                    arguments["torev"] = torev
+                    arguments["torev"] = str(torev)
 
                 # Slot and output parameters
                 if fromslots:
@@ -143,9 +143,9 @@ def register_wiki_page_compare_tool(mcp: FastMCP, get_config: Callable[[], Media
                 if tosection_main:
                     arguments["tosection-main"] = tosection_main
                 if frompst_main:
-                    arguments["frompst-main"] = frompst_main
+                    arguments["frompst-main"] = str(frompst_main).lower()
                 if topst_main:
-                    arguments["topst-main"] = topst_main
+                    arguments["topst-main"] = str(topst_main).lower()
 
                 result = await handle_compare_page(client, arguments)
                 # Return the formatted text from the handler

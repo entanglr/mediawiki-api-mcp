@@ -75,6 +75,10 @@ class MediaWikiClient:
         """Undelete (restore) the revisions of a deleted MediaWiki page."""
         return await self.page_client.undelete_page(**kwargs)
 
+    async def compare_page(self, **kwargs: Any) -> dict[str, Any]:
+        """Compare two revisions of wiki pages or arbitrary content."""
+        return await self.page_client.compare_page(**kwargs)
+
     # Search operations delegation
     async def search_pages(self, **kwargs: Any) -> dict[str, Any]:
         """Perform a full-text search using MediaWiki's search API."""

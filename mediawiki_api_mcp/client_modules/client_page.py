@@ -235,6 +235,221 @@ class MediaWikiPageClient:
         response = await self.auth_client._make_request("GET", params=params)
         return response
 
+    async def parse_page(
+        self,
+        title: str | None = None,
+        pageid: int | None = None,
+        oldid: int | None = None,
+        text: str | None = None,
+        revid: int | None = None,
+        summary: str | None = None,
+        page: str | None = None,
+        redirects: bool = False,
+        prop: list[str] | None = None,
+        wrapoutputclass: str | None = None,
+        usearticle: bool = False,
+        parsoid: bool = False,
+        pst: bool = False,
+        onlypst: bool = False,
+        section: str | None = None,
+        sectiontitle: str | None = None,
+        disablelimitreport: bool = False,
+        disableeditsection: bool = False,
+        disablestylededuplication: bool = False,
+        showstrategykeys: bool = False,
+        preview: bool = False,
+        sectionpreview: bool = False,
+        disabletoc: bool = False,
+        useskin: str | None = None,
+        contentformat: str | None = None,
+        contentmodel: str | None = None,
+        mobileformat: bool = False,
+        templatesandboxprefix: list[str] | None = None,
+        templatesandboxtitle: str | None = None,
+        templatesandboxtext: str | None = None,
+        templatesandboxcontentmodel: str | None = None,
+        templatesandboxcontentformat: str | None = None,
+        **kwargs: Any
+    ) -> dict[str, Any]:
+        """
+        Parse content and return parser output using the MediaWiki Parse API.
+
+        This is a comprehensive implementation of the Parse API that supports
+        all documented parameters for parsing wikitext content.
+
+        Args:
+            title: Title of page the text belongs to
+            pageid: Parse the content of this page (overrides page)
+            oldid: Parse the content of this revision (overrides page and pageid)
+            text: Text to parse (use title or contentmodel to control content model)
+            revid: Revision ID for {{REVISIONID}} and similar variables
+            summary: Summary to parse
+            page: Parse the content of this page (cannot be used with text and title)
+            redirects: If page or pageid is set to a redirect, resolve it
+            prop: Which pieces of information to get (list of property names)
+            wrapoutputclass: CSS class to use to wrap the parser output
+            usearticle: Use ArticleParserOptions hook for article page views
+            parsoid: Generate HTML conforming to MediaWiki DOM spec using Parsoid
+            pst: Do a pre-save transform on the input before parsing
+            onlypst: Do PST on input but don't parse it
+            section: Only parse content of section with this identifier
+            sectiontitle: New section title when section is "new"
+            disablelimitreport: Omit the limit report from parser output
+            disableeditsection: Omit edit section links from parser output
+            disablestylededuplication: Do not deduplicate inline stylesheets
+            showstrategykeys: Include internal merge strategy info in jsconfigvars
+            preview: Parse in preview mode
+            sectionpreview: Parse in section preview mode
+            disabletoc: Omit table of contents in output
+            useskin: Apply selected skin to parser output
+            contentformat: Content serialization format for input text
+            contentmodel: Content model of input text
+            mobileformat: Return parse output suitable for mobile devices
+            templatesandboxprefix: Template sandbox prefix
+            templatesandboxtitle: Parse page using templatesandboxtext
+            templatesandboxtext: Parse page using this content
+            templatesandboxcontentmodel: Content model of templatesandboxtext
+            templatesandboxcontentformat: Content format of templatesandboxtext
+            **kwargs: Additional parameters
+
+        Returns:
+            API response dictionary containing parsed content
+        """
+        params = {
+            "action": "parse",
+            "format": "json",
+            "formatversion": "2"
+        }
+
+        # Page/content identification - validate mutual exclusivity and set correct parameters
+        identification_params = [title, pageid, oldid, text, page, summary]
+        provided_params = [p for p in identification_params if p is not None]
+
+        if len(provided_params) == 0:
+            raise ValueError("Must provide one of: title, pageid, oldid, text, page, or summary")
+
+        # Set page/content identification parameters according to MediaWiki Parse API rules
+        # Priority: oldid > pageid > page > title > text > summary
+        if oldid:
+            # Parse specific revision - use oldid (highest priority)
+            params["oldid"] = str(oldid)
+        elif pageid:
+            # Parse existing page by ID - use pageid (overrides page parameter)
+            params["pageid"] = str(pageid)
+        elif page:
+            # Parse existing page by title - use page parameter
+            params["page"] = page
+        elif title:
+            # Parse existing page by title - always use page parameter for consistency
+            # This fixes the title vs page parameter inconsistency bug
+            params["page"] = title
+        elif text:
+            # Parse arbitrary text - use text parameter
+            params["text"] = text
+        elif summary:
+            # Parse summary only - use summary parameter with empty prop
+            params["summary"] = summary
+            # For summary parsing, prop should be empty according to API docs
+            if prop is None:
+                prop = []
+
+        if revid:
+            params["revid"] = str(revid)
+
+        # Content control parameters
+        if redirects:
+            params["redirects"] = "1"
+
+        # Default prop if not specified - use conservative defaults
+        if prop is None:
+            # Start with basic properties that are supported by most MediaWiki installations
+            prop = ["text", "categories", "links", "sections", "revid"]
+
+            # Add additional properties if specific functionality is requested
+            if not (text or summary):  # Only for existing pages, not arbitrary text parsing
+                prop.extend(["displaytitle", "parsewarnings"])
+
+            # Add template and image info for existing pages
+            if title or pageid or oldid or page:
+                prop.extend(["templates", "images", "externallinks"])
+
+            # Add advanced properties only when explicitly parsing existing pages
+            if (title or pageid or oldid or page) and not pst and not onlypst:
+                prop.extend(["langlinks", "iwlinks", "properties"])
+
+        if prop is not None:
+            params["prop"] = "|".join(prop)
+
+        # Output formatting parameters
+        if wrapoutputclass:
+            params["wrapoutputclass"] = wrapoutputclass
+        if usearticle:
+            params["usearticle"] = "1"
+        if parsoid:
+            params["parsoid"] = "1"
+        if pst:
+            params["pst"] = "1"
+        if onlypst:
+            params["onlypst"] = "1"
+
+        # Section parameters - validate section parameter
+        if section is not None:
+            # Convert section to string if it's an integer
+            section_str = str(section)
+            # Ensure section is a valid identifier (number, 'new', or 'T-' prefix for template sections)
+            if section_str == "new" or section_str.isdigit() or section_str.startswith("T-"):
+                params["section"] = section_str
+            else:
+                raise ValueError("Section parameter must be a number, 'new', or 'T-' prefixed template section")
+        if sectiontitle:
+            params["sectiontitle"] = sectiontitle
+
+        # Output control parameters
+        if disablelimitreport:
+            params["disablelimitreport"] = "1"
+        if disableeditsection:
+            params["disableeditsection"] = "1"
+        if disablestylededuplication:
+            params["disablestylededuplication"] = "1"
+        if showstrategykeys:
+            params["showstrategykeys"] = "1"
+        if preview:
+            params["preview"] = "1"
+        if sectionpreview:
+            params["sectionpreview"] = "1"
+        if disabletoc:
+            params["disabletoc"] = "1"
+
+        # Rendering parameters
+        if useskin:
+            params["useskin"] = useskin
+        if mobileformat:
+            params["mobileformat"] = "1"
+
+        # Content model parameters
+        if contentformat:
+            params["contentformat"] = contentformat
+        if contentmodel:
+            params["contentmodel"] = contentmodel
+
+        # Template sandbox parameters
+        if templatesandboxprefix:
+            params["templatesandboxprefix"] = "|".join(templatesandboxprefix)
+        if templatesandboxtitle:
+            params["templatesandboxtitle"] = templatesandboxtitle
+        if templatesandboxtext:
+            params["templatesandboxtext"] = templatesandboxtext
+        if templatesandboxcontentmodel:
+            params["templatesandboxcontentmodel"] = templatesandboxcontentmodel
+        if templatesandboxcontentformat:
+            params["templatesandboxcontentformat"] = templatesandboxcontentformat
+
+        # Add any additional parameters
+        params.update(kwargs)
+
+        response = await self.auth_client._make_request("GET", params=params)
+        return response
+
     async def move_page(
         self,
         from_title: str | None = None,
@@ -505,3 +720,98 @@ class MediaWikiPageClient:
         except Exception as e:
             logger.error(f"Undelete request failed: {e}")
             raise
+
+    async def compare_pages(
+        self,
+        fromtitle: str | None = None,
+        fromid: int | None = None,
+        fromrev: int | None = None,
+        fromslots: list[str] | None = None,
+        frompst: bool = False,
+        totitle: str | None = None,
+        toid: int | None = None,
+        torev: int | None = None,
+        torelative: str | None = None,
+        toslots: list[str] | None = None,
+        topst: bool = False,
+        prop: list[str] | None = None,
+        slots: list[str] | None = None,
+        difftype: str = "table",
+        **kwargs: Any
+    ) -> dict[str, Any]:
+        """
+        Get the difference between two pages using the MediaWiki Compare API.
+
+        Args:
+            fromtitle: First title to compare
+            fromid: First page ID to compare
+            fromrev: First revision to compare
+            fromslots: Override content of the from revision (specify slots)
+            frompst: Do a pre-save transform on fromtext-{slot}
+            totitle: Second title to compare
+            toid: Second page ID to compare
+            torev: Second revision to compare
+            torelative: Use a revision relative to the from revision ('cur', 'next', 'prev')
+            toslots: Override content of the to revision (specify slots)
+            topst: Do a pre-save transform on totext
+            prop: Which pieces of information to get
+            slots: Return individual diffs for these slots
+            difftype: Return comparison formatted as 'inline', 'table', or 'unified'
+            **kwargs: Additional parameters including templated slot parameters
+
+        Returns:
+            API response dictionary containing comparison results
+        """
+        params = {
+            "action": "compare",
+            "format": "json",
+            "formatversion": "2"
+        }
+
+        # From parameters
+        if fromtitle:
+            params["fromtitle"] = fromtitle
+        if fromid:
+            params["fromid"] = str(fromid)
+        if fromrev:
+            params["fromrev"] = str(fromrev)
+        if fromslots:
+            params["fromslots"] = "|".join(fromslots)
+        if frompst:
+            params["frompst"] = "1"
+
+        # To parameters
+        if totitle:
+            params["totitle"] = totitle
+        if toid:
+            params["toid"] = str(toid)
+        if torev:
+            params["torev"] = str(torev)
+        if torelative:
+            params["torelative"] = torelative
+        if toslots:
+            params["toslots"] = "|".join(toslots)
+        if topst:
+            params["topst"] = "1"
+
+        # Output control parameters
+        if prop:
+            params["prop"] = "|".join(prop)
+        else:
+            # Default properties
+            params["prop"] = "diff|ids|title"
+
+        if slots:
+            if slots == ["*"]:
+                params["slots"] = "*"
+            else:
+                params["slots"] = "|".join(slots)
+
+        if difftype:
+            params["difftype"] = difftype
+
+        # Add any additional parameters (including templated slot parameters)
+        params.update(kwargs)
+
+        response = await self.auth_client._make_request("GET", params=params)
+        return response

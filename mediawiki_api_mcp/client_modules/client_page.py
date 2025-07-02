@@ -720,3 +720,98 @@ class MediaWikiPageClient:
         except Exception as e:
             logger.error(f"Undelete request failed: {e}")
             raise
+
+    async def compare_pages(
+        self,
+        fromtitle: str | None = None,
+        fromid: int | None = None,
+        fromrev: int | None = None,
+        fromslots: list[str] | None = None,
+        frompst: bool = False,
+        totitle: str | None = None,
+        toid: int | None = None,
+        torev: int | None = None,
+        torelative: str | None = None,
+        toslots: list[str] | None = None,
+        topst: bool = False,
+        prop: list[str] | None = None,
+        slots: list[str] | None = None,
+        difftype: str = "table",
+        **kwargs: Any
+    ) -> dict[str, Any]:
+        """
+        Get the difference between two pages using the MediaWiki Compare API.
+
+        Args:
+            fromtitle: First title to compare
+            fromid: First page ID to compare
+            fromrev: First revision to compare
+            fromslots: Override content of the from revision (specify slots)
+            frompst: Do a pre-save transform on fromtext-{slot}
+            totitle: Second title to compare
+            toid: Second page ID to compare
+            torev: Second revision to compare
+            torelative: Use a revision relative to the from revision ('cur', 'next', 'prev')
+            toslots: Override content of the to revision (specify slots)
+            topst: Do a pre-save transform on totext
+            prop: Which pieces of information to get
+            slots: Return individual diffs for these slots
+            difftype: Return comparison formatted as 'inline', 'table', or 'unified'
+            **kwargs: Additional parameters including templated slot parameters
+
+        Returns:
+            API response dictionary containing comparison results
+        """
+        params = {
+            "action": "compare",
+            "format": "json",
+            "formatversion": "2"
+        }
+
+        # From parameters
+        if fromtitle:
+            params["fromtitle"] = fromtitle
+        if fromid:
+            params["fromid"] = str(fromid)
+        if fromrev:
+            params["fromrev"] = str(fromrev)
+        if fromslots:
+            params["fromslots"] = "|".join(fromslots)
+        if frompst:
+            params["frompst"] = "1"
+
+        # To parameters
+        if totitle:
+            params["totitle"] = totitle
+        if toid:
+            params["toid"] = str(toid)
+        if torev:
+            params["torev"] = str(torev)
+        if torelative:
+            params["torelative"] = torelative
+        if toslots:
+            params["toslots"] = "|".join(toslots)
+        if topst:
+            params["topst"] = "1"
+
+        # Output control parameters
+        if prop:
+            params["prop"] = "|".join(prop)
+        else:
+            # Default properties
+            params["prop"] = "diff|ids|title"
+
+        if slots:
+            if slots == ["*"]:
+                params["slots"] = "*"
+            else:
+                params["slots"] = "|".join(slots)
+
+        if difftype:
+            params["difftype"] = difftype
+
+        # Add any additional parameters (including templated slot parameters)
+        params.update(kwargs)
+
+        response = await self.auth_client._make_request("GET", params=params)
+        return response
